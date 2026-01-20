@@ -5,71 +5,128 @@ import App from './App.jsx'
 import { Provider } from 'react-redux'
 import { store } from './redux/store.jsx'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import Products from './pages/Products.jsx'
+import CreateProducts from './pages/CreateProducts.jsx'
+import ExpiredProducts from './pages/ExpiredProducts.jsx'
+import LowStocks from './pages/LowStocks.jsx'
+import Category from './pages/Category.jsx'
+import SubCategory from './pages/SubCategory.jsx'
+import Brands from './pages/Brands.jsx'
+import ManageStock from './pages/ManageStock.jsx'
+import Sales from './pages/Sales.jsx'
+import Invoices from './pages/Invoices.jsx'
+import Discount from './pages/Discount.jsx'
+import Customers from './pages/Customers.jsx'
+import Employee from './pages/Employee.jsx'
+import Reports from './pages/Reports.jsx'
+import Settings from './pages/Settings.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Login from './pages/Authentication/Login.jsx'
+import Register from './pages/Authentication/Register.jsx'
+import ForgotPassword from './pages/Authentication/ForgotPassword.jsx'
+import EmailVerification from './pages/Authentication/EmailVerification.jsx'
+import ResetPassword from './pages/Authentication/ResetPassword.jsx'
+import Success from './pages/Authentication/Success.jsx'
+import Verification from './pages/Authentication/Verification.jsx'
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <App />
+    element: <App />,
+    children: [
+      {
+        path: '/',
+        element: <Dashboard />
+      },
+      {
+        path: "/products",
+        element: <Products />
+      },
+      {
+        path: "/create-products",
+        element: <CreateProducts />
+      },
+      {
+        path: "/expired-products",
+        element: <ExpiredProducts />
+      },
+      {
+        path: "/low-stocks",
+        element: <LowStocks />
+      },
+      {
+        path: "/category",
+        element: <Category />
+      },
+      {
+        path: "/sub-category",
+        element: <SubCategory />
+      },
+      {
+        path: "/brands",
+        element: <Brands />
+      },
+      {
+        path: "/manage-stock",
+        element: <ManageStock />
+      },
+      {
+        path: "/sales",
+        element: <Sales />
+      },
+      {
+        path: "/invoices",
+        element: <Invoices />
+      },
+      {
+        path: "/discount",
+        element: <Discount />
+      },
+      {
+        path: "/customers",
+        element: <Customers />
+      },
+      {
+        path: "/employee",
+        element: <Employee />
+      },
+      {
+        path: "/reports",
+        element: <Reports />
+      },
+      {
+        path: "/settings",
+        element: <Settings />
+      },
+    ]
   },
   {
-    path: "/products",
-    element: <App />
+    path: "/login",
+    element: <Login />
   },
   {
-    path: "/create-products",
-    element: <App />
+    path: "/register",
+    element: <Register />
   },
   {
-    path: "/expired-products",
-    element: <App />
+    path: "/forgot-password",
+    element: <ForgotPassword />
   },
   {
-    path: "/low-stocks",
-    element: <App />
+    path: "/email-verification",
+    element: <EmailVerification />
   },
   {
-    path: "/category",
-    element: <App />
+    path: "/reset-password",
+    element: <ResetPassword />
   },
   {
-    path: "/sub-category",
-    element: <App />
+    path: "/success",
+    element: <Success />
   },
   {
-    path: "/brands",
-    element: <App />
-  },
-  {
-    path: "/manage-stock",
-    element: <App />
-  },
-  {
-    path: "/sales",
-    element: <App />
-  },
-  {
-    path: "/invoices",
-    element: <App />
-  },
-  {
-    path: "/discount",
-    element: <App />
-  },
-  {
-    path: "/customers",
-    element: <App />
-  },
-  {
-    path: "/employee",
-    element: <App />
-  },
-  {
-    path: "/reports",
-    element: <App />
-  },
-  {
-    path: "/settings",
-    element: <App />
+    path: "/verification",
+    element: <Verification />
   },
 ])
 

@@ -1,9 +1,9 @@
 import React from 'react'
 
 function UnderMaintenance() {
-    return (
-        <div>Under Maintenance</div>
-    )
+  return (
+    <div className=''>Under Maintenance</div>
+  )
 }
 
 export default UnderMaintenance

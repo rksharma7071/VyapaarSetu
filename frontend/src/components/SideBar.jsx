@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { RxDashboard } from "react-icons/rx";
 import { FaAngleDown, FaRegUser } from "react-icons/fa6";
@@ -9,13 +9,22 @@ import { HiViewGridAdd } from "react-icons/hi";
 import { AiOutlineStock, AiOutlinePercentage, AiOutlineFile } from "react-icons/ai";
 import { BiCategory, BiSubdirectoryRight } from "react-icons/bi";
 import { FiShoppingCart } from "react-icons/fi";
+import { PiCaretDoubleLeftBold } from "react-icons/pi";
 
 function SideBar() {
   const [openMenu, setOpenMenu] = useState(null);
-  const location = useLocation(); // 🔹 get current path
+  const [menu, setMenu] = useState(() => {
+    const stored = localStorage.getItem("menu");
+    return stored !== null ? JSON.parse(stored) : true;
+  });
+  const location = useLocation();
 
   const handleOpenMenu = (menu) => {
     setOpenMenu((prev) => (prev === menu ? null : menu));
+  };
+
+  const handleMenu = () => {
+    setMenu(prev => !prev);
   };
 
   const menuItems = [
@@ -43,13 +52,26 @@ function SideBar() {
     { label: "Settings", to: "/settings", icon: IoSettingsOutline },
   ];
 
-  return (
-    <div className="w-64 border-r border-gray-200">
-      <Link to="/" className="block border-gray-200 px-4 py-2 border-b">
-        <img src="logo.png" alt="Company Logo" loading="lazy" className="w-48" />
-      </Link>
+  useEffect(() => {
+    localStorage.setItem("menu", JSON.stringify(menu));
+  }, [menu]);
 
-      <div className="p-4">
+  return (
+    <div className={`${menu === true ? "w-56" : ""} border-r border-gray-200 relative`}>
+      <Link to="/" className="w-[inherit] block h-20 border-b border-gray-200 px-4 py-2">
+        {menu === true ?
+          <img src="logo.png" alt="Company Logo" loading="lazy" className="h-14" />
+          :
+          <img src="favicon.png" alt="Company Logo" loading="lazy" className="h-14" />
+        }
+      </Link>
+      <div
+        className={`fixed top-7 ${menu === true ? "left-52" : "left-21"} bg-primary rounded-full p-1 text-white font-bold cursor-pointer z-10`}
+        onClick={handleMenu}>
+        <PiCaretDoubleLeftBold />
+      </div>
+
+      <div className="p-2">
         {/* <p className="text-sm pb-2 text-gray-600">Main</p> */}
 
         {menuItems.map((item) => {
@@ -66,13 +88,13 @@ function SideBar() {
                   ${subMenuActive || location.pathname === item.to ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"}`
                 }
               >
-                <div className="flex items-center justify-between w-full">
+                <div className={`flex items-center ${menu === true ? "justify-between" : "justify-center"} w-full`}>
                   <div className="flex items-center gap-5 text-sm">
                     <item.icon />
-                    {item.label}
+                    {menu === true && item.label}
                   </div>
 
-                  {item.subMenu && (
+                  {item.subMenu && menu && (
                     <FaAngleDown
                       className={`text-xl p-1 rounded-full transition-transform
                         ${openMenu === item.key || subMenuActive ? "rotate-180 bg-primary/20 text-primary" : "bg-gray-100 text-gray-600"}`}
@@ -94,7 +116,7 @@ function SideBar() {
                     >
                       <div className="flex items-center w-full gap-5 text-sm">
                         <sub.icon />
-                        {sub.label}
+                        {menu === true ? sub.label : ""}
                       </div>
                     </NavLink>
                   ))}
