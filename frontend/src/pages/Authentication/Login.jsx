@@ -48,7 +48,7 @@ function Login() {
             <div>
                 <img src="logo.png" alt="Company Logo" loading="lazy" className="h-14" />
             </div>
-            <div className="bg-white/80 backdrop-blur-md rounded px-8 py-6 shadow border border-gray-200 p-4 m-4 w-md">
+            <div className="bg-white/80 backdrop-blur-md rounded-lg px-8 py-6 shadow border border-gray-200 p-4 m-4 w-md">
                 <div className='font-semibold text-2xl mb-2'>Sign In</div>
                 <div className='text-gray-500 mb-4 text-sm'>Access the VyapaarSetu using your email and passcode.</div>
                 <form onSubmit={handleForm}>
@@ -61,7 +61,7 @@ function Login() {
                             autoComplete="email"
                             value={login.email}
                             id='email'
-                            className='w-full rounded border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
                         <span className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500"><HiOutlineMail /></span>
                     </div>
                     <div className='relative mb-3'>
@@ -73,7 +73,7 @@ function Login() {
                             onChange={handleChange}
                             id='password'
                             autoComplete="current-password"
-                            className='w-full rounded border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
                         <span onClick={handleShowPassword} className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500 cursor-pointer">
                             {showPassword === false ? <FiEye /> : <FiEyeOff />}
                         </span>
@@ -82,7 +82,7 @@ function Login() {
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" id="rememberme" onChange={handleRememberMe} className="peer hidden" />
                             <div
-                                className=" h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20"
+                                className=" h-4 w-4 rounded-lg border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20"
                             >
                                 <svg
                                     className="h-3 w-3 text-white peer-checked:block"

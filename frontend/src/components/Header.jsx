@@ -20,12 +20,12 @@ function Header() {
                 </div>
 
                 <div className="flex items-center gap-3 cursor-pointer">
-                    <Link to={'/'} className='flex gap-2 justify-center items-center bg-secondary px-2 py-1 rounded text-light text-sm font-semibold'>
+                    <Link to={'/'} className='flex gap-2 justify-center items-center bg-secondary px-2 py-1 rounded-lg text-light text-sm font-semibold'>
                         <FaLaptop />
                         POS
                     </Link>
                     <img
-                        className="w-12 h-12 rounded border-2 border-gray-200 object-cover"
+                        className="w-12 h-12 rounded-lg border-2 border-gray-200 object-cover"
                         src="https://img.freepik.com/free-photo/front-view-business-woman-suit_23-2148603018.jpg"
                         alt="User avatar"
                     />

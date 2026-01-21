@@ -29,6 +29,7 @@ function SideBar() {
 
   const menuItems = [
     { label: "Dashboard", to: "/", icon: RxDashboard },
+    { label: "Product", to: "/products", icon: BsBox },
     {
       label: "Product",
       key: "products",
@@ -43,6 +44,7 @@ function SideBar() {
         { label: "Manage Stock", to: "/manage-stock", icon: AiOutlineStock },
       ],
     },
+
     { label: "Sales", to: "/sales", icon: FiShoppingCart },
     { label: "Invoices", to: "/invoices", icon: AiOutlineFile },
     { label: "Discount", to: "/discount", icon: AiOutlinePercentage },
@@ -84,7 +86,7 @@ function SideBar() {
                 end={!!item.to}
                 onClick={() => item.subMenu && handleOpenMenu(item.key)}
                 className={() =>
-                  `flex items-center justify-between gap-5 p-2 rounded mb-2
+                  `flex items-center justify-between gap-5 p-2 rounded-lg mb-2
                   ${subMenuActive || location.pathname === item.to ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"}`
                 }
               >
@@ -110,7 +112,7 @@ function SideBar() {
                       key={sub.label}
                       to={sub.to}
                       className={({ isActive }) =>
-                        `flex items-center gap-5 p-2 rounded mb-2
+                        `flex items-center gap-5 p-2 rounded-lg mb-2
                         ${isActive ? "bg-primary/10 text-primary" : "text-gray-600 hover:bg-gray-100"}`
                       }
                     >

@@ -26,7 +26,7 @@ function ForgotPassword() {
             <div>
                 <img src="logo.png" alt="Company Logo" loading="lazy" className="h-14" />
             </div>
-            <div className="bg-white/80 backdrop-blur-md rounded px-8 py-6 shadow border border-gray-200 p-4 m-4 w-md">
+            <div className="bg-white/80 backdrop-blur-md rounded-lg px-8 py-6 shadow border border-gray-200 p-4 m-4 w-md">
                 <div className='font-semibold text-2xl mb-2'>Forget Password?</div>
                 <div className='text-gray-500 mb-4 text-sm'>If you forgot your password, well, then we’ll email you instructions to reset your password.</div>
                 <form onSubmit={handleForm}>
@@ -39,7 +39,7 @@ function ForgotPassword() {
                             autoComplete="email"
                             value={user.email}
                             id='email'
-                            className='w-full rounded border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
                         <span className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500"><HiOutlineMail /></span>
                     </div>
 
