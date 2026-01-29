@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { Provider } from 'react-redux'
-import { store } from './redux/store.jsx'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Products from './pages/Products.jsx'
 import CreateProducts from './pages/CreateProducts.jsx'
@@ -28,6 +27,10 @@ import EmailVerification from './pages/Authentication/EmailVerification.jsx'
 import ResetPassword from './pages/Authentication/ResetPassword.jsx'
 import Success from './pages/Authentication/Success.jsx'
 import Verification from './pages/Authentication/Verification.jsx'
+import POS from './pages/POS.jsx'
+import { getProductBySlug, getProducts } from './data/product.js'
+import EditProduct from './pages/EditProduct.jsx'
+import { store } from './store/index.js'
 
 const router = createBrowserRouter([
   {
@@ -41,6 +44,11 @@ const router = createBrowserRouter([
       {
         path: "/products",
         element: <Products />
+      },
+      {
+        path: "/products/:slug",
+        element: <EditProduct />,
+        loader: getProductBySlug
       },
       {
         path: "/create-products",
@@ -99,6 +107,10 @@ const router = createBrowserRouter([
         element: <Settings />
       },
     ]
+  },
+  {
+    path: "/pos",
+    element: <POS />
   },
   {
     path: "/login",

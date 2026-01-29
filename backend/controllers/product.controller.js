@@ -4,13 +4,29 @@ import Product from "../models/product.model.js";
 
 export const getAllProducts = async (req, res) => {
     try {
-        const products = await Product.find({});
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 50;
+        const skip = (page - 1) * limit;
+
+        const [products, total] = await Promise.all([
+            Product.find({})
+                .select(
+                    "_id slug name sku description type category price taxRate trackStock stockQty unit image isActive",
+                )
+                .lean()
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            Product.countDocuments({}),
+        ]);
 
         return res.status(200).json({
             success: true,
             data: {
                 products,
-                total: products.length,
+                total,
+                page,
+                totalPages: Math.ceil(total / limit),
             },
         });
     } catch (error) {
@@ -201,47 +217,45 @@ export const updateProduct = async (req, res) => {
 
 export const deleteProduct = async (req, res) => {
     try {
-        const id = req.params.id;
+        const { slug } = req.params;
 
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res
-                .status(400)
-                .json({ success: false, message: "Invalid product id." });
-        }
-
-        const product = await Product.findById(id).exec();
+        const product = await Product.findOne({ slug });
 
         if (!product) {
-            return res
-                .status(404)
-                .json({ success: false, message: "product not found!" });
+            return res.status(404).json({
+                success: false,
+                message: "Product not found",
+            });
         }
 
-        const publicIds = (product.images || [])
-            .map((img) => img.publicId)
-            .filter(Boolean);
+        const publicIds = [];
+
+        if (product.publicId) {
+            publicIds.push(product.publicId);
+        }
 
         let cloudinaryResults = [];
 
         if (publicIds.length > 0) {
-            const deletionPromises = publicIds.map((publicId) =>
-                cloudinary.uploader
-                    .destroy(publicId, { invalidate: true })
-                    .then((result) => ({
-                        publicId,
-                        status: "fulfilled",
-                        result,
-                    }))
-                    .catch((error) => ({
-                        publicId,
-                        status: "rejected",
-                        error: error?.message || String(error),
-                    })),
+            cloudinaryResults = await Promise.all(
+                publicIds.map((publicId) =>
+                    cloudinary.uploader
+                        .destroy(publicId, { invalidate: true })
+                        .then((result) => ({
+                            publicId,
+                            status: "fulfilled",
+                            result,
+                        }))
+                        .catch((error) => ({
+                            publicId,
+                            status: "rejected",
+                            error: error?.message || String(error),
+                        })),
+                ),
             );
-
-            cloudinaryResults = await Promise.all(deletionPromises);
         }
-        await Product.deleteOne({ _id: id });
+
+        await Product.deleteOne({ slug });
 
         return res.status(200).json({
             success: true,

@@ -2,49 +2,44 @@ import mongoose from "mongoose";
 
 const orderItemSchema = new mongoose.Schema(
     {
-        productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
-        quantity: { type: Number, required: true, min: 1, default: 1 },
-        unit_price: { type: Number, required: true, min: 0 },
-        total_price: { type: Number, required: true, min: 0 },
+        productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true,
+        },
+        name: { type: String, required: true },
+        qty: { type: Number, required: true, min: 1 },
+        unitPrice: { type: Number, required: true, min: 0 },
+        totalPrice: { type: Number, required: true, min: 0 },
     },
-    { _id: false }
-);
-
-const shipmentSchema = new mongoose.Schema(
-    {
-        carrier: { type: String },
-        tracking_number: { type: String },
-        status: { type: String, enum: ["pending", "shipped", "delivered", "cancelled"], default: "pending" },
-        shipped_at: { type: Date },
-        delivered_at: { type: Date },
-    },
-    { _id: false }
+    { _id: false },
 );
 
 const orderSchema = new mongoose.Schema(
     {
-        orderNumber: { type: Number, required: true, unique: true, index: true },
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true,},
+        orderNumber: { type: String, required: true, unique: true, index: true },
+        cashierId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
         items: {
             type: [orderItemSchema],
             required: true,
-            validate: [ (v) => v.length > 0, "Order must have at least one item"],
+            
+            validate: [
+                (v) => v.length > 0,
+                "POS order must have at least one item",
+            ],
         },
-        shipment: shipmentSchema,
-        shipping: { type: Number, required: true, min: 0 },
+
         subtotal: { type: Number, required: true, min: 0 },
-        tax: { type: Number, required: true, min: 0 },
+        tax: { type: Number, default: 0, min: 0 },
         discount: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
-        status: { type: String, enum: ["in progress", "fulfilled", "unfulfilled", "cancelled"], default: "in progress", index: true },
-        placed_at: { type: Date, default: Date.now },
-        shipping_address: { type: String, required: true },
-        billing_address: { type: String, required: true },
-        paymentId: { type: String, index: true },
+        paymentMethod: { type: String, enum: ["cash", "upi", "card"], required: true },
+        paymentStatus: { type: String, enum: ["paid", "unpaid"], default: "paid" },
+        status: { type: String, enum: ["completed", "cancelled", "refunded"], default: "completed", index: true },
+        notes: { type: String },
+        placedAt: { type: Date, default: Date.now, index: true },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true },
 );
 
 const Order = mongoose.model("Order", orderSchema);

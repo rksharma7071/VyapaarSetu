@@ -30,20 +30,20 @@ function SideBar() {
   const menuItems = [
     { label: "Dashboard", to: "/", icon: RxDashboard },
     { label: "Product", to: "/products", icon: BsBox },
-    {
-      label: "Product",
-      key: "products",
-      icon: BsBox,
-      subMenu: [
-        { label: "Create Product", to: "/create-products", icon: HiViewGridAdd },
-        { label: "Expired Products", to: "/expired-products", icon: BsBox },
-        { label: "Low Stocks", to: "/low-stocks", icon: AiOutlineStock },
-        { label: "Category", to: "/category", icon: BiCategory },
-        { label: "Sub Category", to: "/sub-category", icon: BiSubdirectoryRight },
-        { label: "Brands", to: "/brands", icon: BsBox },
-        { label: "Manage Stock", to: "/manage-stock", icon: AiOutlineStock },
-      ],
-    },
+    // {
+    //   label: "Product",
+    //   key: "products",
+    //   icon: BsBox,
+    //   subMenu: [
+    //     { label: "Create Product", to: "/create-products", icon: HiViewGridAdd },
+    //     { label: "Expired Products", to: "/expired-products", icon: BsBox },
+    //     { label: "Low Stocks", to: "/low-stocks", icon: AiOutlineStock },
+    //     { label: "Category", to: "/category", icon: BiCategory },
+    //     { label: "Sub Category", to: "/sub-category", icon: BiSubdirectoryRight },
+    //     { label: "Brands", to: "/brands", icon: BsBox },
+    //     { label: "Manage Stock", to: "/manage-stock", icon: AiOutlineStock },
+    //   ],
+    // },
 
     { label: "Sales", to: "/sales", icon: FiShoppingCart },
     { label: "Invoices", to: "/invoices", icon: AiOutlineFile },
