@@ -17,7 +17,20 @@ export const fetchProducts = createAsyncThunk(
     },
 );
 
-// Delete product by slug
+export const fetchProductById = createAsyncThunk(
+    "products/fetchProductById",
+    async (id, { rejectWithValue }) => {
+        try {
+            const res = await axios.get(`${api}/product/${id}`);
+            return res.data.data || res.data;
+        } catch (err) {
+            return rejectWithValue(
+                err.response?.data?.message || "Failed to fetch product",
+            );
+        }
+    },
+);
+
 export const deleteProduct = createAsyncThunk(
     "products/deleteProduct",
     async (slug, { rejectWithValue }) => {
@@ -32,12 +45,11 @@ export const deleteProduct = createAsyncThunk(
     },
 );
 
-/* ------------------ SLICE ------------------ */
-
 const productsSlice = createSlice({
     name: "products",
     initialState: {
         products: [],
+        selectedProduct: null,
         loading: false,
         error: null,
         categoryFilter: "",
@@ -71,11 +83,26 @@ const productsSlice = createSlice({
             })
 
             .addCase(deleteProduct.fulfilled, (state, action) => {
-                state.products = state.products.filter((p) => p.slug !== action.payload);
+                state.products = state.products.filter(
+                    (p) => p.slug !== action.payload,
+                );
+            })
+            .addCase(fetchProductById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchProductById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.selectedProduct = action.payload;
+            })
+            .addCase(fetchProductById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
             });
     },
 });
 
-export const { setCategoryFilter, setTypeFilter, clearFilters } = productsSlice.actions;
+export const { setCategoryFilter, setTypeFilter, clearFilters } =
+    productsSlice.actions;
 
 export default productsSlice.reducer;

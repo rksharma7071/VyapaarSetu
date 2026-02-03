@@ -1,6 +1,6 @@
 import razorpay from "../config/razorpay.js";
 import crypto from "crypto";
-import { Order } from "../models/order.model.js";
+import Order from "../models/order.model.js";
 import { Payment } from "../models/payment.model.js";
 
 export async function createRazorpayOrder(req, res) {

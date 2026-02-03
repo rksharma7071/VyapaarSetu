@@ -45,6 +45,7 @@ function SideBar() {
     //   ],
     // },
 
+    { label: "Order", to: "/orders", icon: FiShoppingCart },
     { label: "Sales", to: "/sales", icon: FiShoppingCart },
     { label: "Invoices", to: "/invoices", icon: AiOutlineFile },
     { label: "Discount", to: "/discount", icon: AiOutlinePercentage },

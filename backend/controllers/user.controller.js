@@ -11,7 +11,6 @@ async function handleCreateNewUser(req, res) {
         const body = req.body;
 
         if (
-            !body.username ||
             !body.email ||
             !body.password ||
             !body.first_name ||
@@ -22,7 +21,6 @@ async function handleCreateNewUser(req, res) {
         }
 
         const result = await User.create({
-            username: body.username,
             email: body.email,
             password: body.password,
             first_name: body.first_name,
@@ -47,14 +45,13 @@ async function handleGetUserUinsgId(req, res) {
 async function handleUpdateUserUsingId(req, res) {
     try {
         const { id } = req.params;
-        const { username, email, first_name, last_name, role } = req.body;
+        const { email, first_name, last_name, role } = req.body;
 
         const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        if (username) user.username = username;
         if (email) user.email = email;
         if (first_name) user.first_name = first_name;
         if (last_name) user.last_name = last_name;
@@ -66,7 +63,6 @@ async function handleUpdateUserUsingId(req, res) {
             status: "success",
             user: {
                 id: updatedUser._id,
-                username: updatedUser.username,
                 email: updatedUser.email,
                 first_name: updatedUser.first_name,
                 last_name: updatedUser.last_name,

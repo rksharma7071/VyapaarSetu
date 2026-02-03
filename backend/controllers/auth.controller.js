@@ -8,17 +8,17 @@ function generateOTP() {
 }
 
 async function handleAuthSignUp(req, res) {
-    const { username, email, password, first_name, last_name, role } = req.body;
+    const { email, password, first_name, last_name, role } = req.body;
 
     try {
         // Check if user already exists
         const existingUser = await User.findOne({
-            $or: [{ email }, { username }],
+            $or: [{ email }],
         });
         if (existingUser) {
             return res
                 .status(400)
-                .json({ message: "Email or username already in use" });
+                .json({ message: "Email already in use" });
         }
 
         // Hash password
@@ -27,7 +27,6 @@ async function handleAuthSignUp(req, res) {
 
         // Create new user
         const newUser = new User({
-            username,
             email,
             password: hashedPassword,
             first_name,
@@ -49,7 +48,6 @@ async function handleAuthSignUp(req, res) {
             token,
             user: {
                 id: newUser._id,
-                username: newUser.username,
                 email: newUser.email,
                 first_name: newUser.first_name,
                 last_name: newUser.last_name,
@@ -101,7 +99,6 @@ async function handleAuthLogin(req, res) {
             token,
             user: {
                 id: user._id,
-                username: user.username,
                 email: user.email,
                 first_name: user.first_name,
                 last_name: user.last_name,

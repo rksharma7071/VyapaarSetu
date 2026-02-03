@@ -31,6 +31,11 @@ import POS from './pages/POS.jsx'
 import { getProductBySlug, getProducts } from './data/product.js'
 import EditProduct from './pages/EditProduct.jsx'
 import { store } from './store/index.js'
+import Order from './pages/Order.jsx'
+import OrderById from './pages/OrderById.jsx'
+import ProductById from './pages/ProductById.jsx'
+import Checkout from './components/POS/Checkout.jsx'
+import Main from './components/POS/Main.jsx'
 
 const router = createBrowserRouter([
   {
@@ -46,6 +51,18 @@ const router = createBrowserRouter([
         element: <Products />
       },
       {
+        path: "/orders",
+        element: <Order />
+      },
+      {
+        path: "/orders/:id",
+        element: <OrderById />
+      },
+      // {
+      //   path: "/product/:slug",
+      //   element: <ProductById />
+      // },
+      {
         path: "/products/:slug",
         element: <EditProduct />,
         loader: getProductBySlug
@@ -58,6 +75,11 @@ const router = createBrowserRouter([
         path: "/expired-products",
         element: <ExpiredProducts />
       },
+      {
+        path: "/low-stocks",
+        element: <LowStocks />
+      },
+
       {
         path: "/low-stocks",
         element: <LowStocks />
@@ -110,8 +132,13 @@ const router = createBrowserRouter([
   },
   {
     path: "/pos",
-    element: <POS />
+    element: <Main />,
+    children: [
+      { index: true, element: <POS /> },
+      { path: "checkout", element: <Checkout /> },
+    ],
   },
+
   {
     path: "/login",
     element: <Login />

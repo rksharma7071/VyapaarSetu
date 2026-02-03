@@ -8,101 +8,60 @@ import { FaCheck } from "react-icons/fa6";
 import { GoChevronDown } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
-import {
-    fetchProducts,
-    deleteProduct,
-    setCategoryFilter,
-    setTypeFilter,
-} from "../store/productsSlice";
+import { fetchOrders, setPaymentFilter, setStatusFilter } from "../store/ordersSlice";
 import Loading from "../components/Loading";
 
-function Products() {
-    const dispatch = useDispatch();
+function Order() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const {
-        products,
+        orders,
         loading,
         error,
-        categoryFilter,
-        typeFilter,
-    } = useSelector((state) => state.products);
-
+        statusFilter,
+        paymentFilter,
+    } = useSelector((state) => state.orders);
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [selectedProducts, setSelectedProducts] = useState([]);
+    const [selectedOrders, setSelectedOrders] = useState([]);
 
-    /* ---------------- FETCH ---------------- */
+
     useEffect(() => {
-        dispatch(fetchProducts());
+        dispatch(fetchOrders());
     }, [dispatch]);
 
-    /* ---------------- FILTER OPTIONS ---------------- */
-    const categories = useMemo(
-        () => [...new Set(products.map((p) => p.category))],
-        [products]
-    );
-
-    const types = useMemo(
-        () => [...new Set(products.map((p) => p.type))],
-        [products]
-    );
-
-    /* ---------------- FILTER + SEARCH ---------------- */
-    const filteredProducts = useMemo(() => {
-        return products.filter((product) => {
+    const filteredOrders = useMemo(() => {
+        return orders.filter((order) => {
             const matchesSearch =
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.sku?.toLowerCase().includes(searchTerm.toLowerCase());
+                order.orderNumber.toString().includes(searchTerm);
 
-            const matchesCategory =
-                !categoryFilter || product.category === categoryFilter;
+            const matchesStatus =
+                !statusFilter || order.status === statusFilter;
 
-            const matchesType =
-                !typeFilter || product.type === typeFilter;
+            const matchesPayment =
+                !paymentFilter || order.paymentMethod === paymentFilter;
 
-            return matchesSearch && matchesCategory && matchesType;
+            return matchesSearch && matchesStatus && matchesPayment;
         });
-    }, [products, searchTerm, categoryFilter, typeFilter]);
+    }, [orders, searchTerm, statusFilter, paymentFilter]);
 
-    /* ---------------- SORT (NEWEST FIRST) ---------------- */
-    const sortedProducts = useMemo(
-        () => [...filteredProducts].reverse(),
-        [filteredProducts]
+
+    const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
+    const startIndex = (currentPage - 1) * rowsPerPage;
+
+    const currentOrders = filteredOrders.slice(
+        startIndex,
+        startIndex + rowsPerPage
     );
 
-    /* ---------------- PAGINATION ---------------- */
-    const totalPages = Math.ceil(sortedProducts.length / rowsPerPage);
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const endIndex = startIndex + rowsPerPage;
-    const currentProducts = sortedProducts.slice(startIndex, endIndex);
-
-    /* ---------------- HANDLERS ---------------- */
-    const handleDelete = (slug) => {
-        if (window.confirm("Delete this product?")) {
-            dispatch(deleteProduct(slug));
-        }
-    };
-
-    const handleSelectAll = (e) => {
-        setSelectedProducts(
-            e.target.checked ? currentProducts.map((p) => p._id) : []
-        );
-    };
-
-    const handleSelectProduct = (id) => {
-        setSelectedProducts((prev) =>
+    const handleSelectOrder = (id) => {
+        setSelectedOrders((prev) =>
             prev.includes(id)
                 ? prev.filter((x) => x !== id)
                 : [...prev, id]
         );
-    };
-
-    const handleRowsPerPageChange = (e) => {
-        setRowsPerPage(Number(e.target.value));
-        setCurrentPage(1);
     };
 
     const handlePageChange = (page) => {
@@ -111,43 +70,31 @@ function Products() {
         }
     };
 
-    const getPageNumbers = () => {
-        const pages = [];
-        const maxVisiblePages = 5;
-
-        if (totalPages <= maxVisiblePages) {
-            for (let i = 1; i <= totalPages; i++) pages.push(i);
-        } else if (currentPage <= 3) {
-            pages.push(1, 2, 3, 4, "...", totalPages);
-        } else if (currentPage >= totalPages - 2) {
-            pages.push(
-                1,
-                "...",
-                totalPages - 3,
-                totalPages - 2,
-                totalPages - 1,
-                totalPages
-            );
-        } else {
-            pages.push(
-                1,
-                "...",
-                currentPage - 1,
-                currentPage,
-                currentPage + 1,
-                "...",
-                totalPages
-            );
-        }
-
-        return pages;
+    const handleRowsPerPageChange = (e) => {
+        setRowsPerPage(Number(e.target.value));
+        setCurrentPage(1);
     };
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, categoryFilter, typeFilter]);
+    const handleCancelOrder = (id) => {
+        if (window.confirm("Cancel this order?")) {
+            dispatch(cancelOrder(id));
+        }
+    };
 
-    const isAllSelected = currentProducts.length > 0 && currentProducts.every((p) => selectedProducts.includes(p._id));
+    const handleSelectAll = (e) => {
+        if (e.target.checked) {
+            setSelectedOrders(currentOrders.map((o) => o._id));
+        } else {
+            setSelectedOrders([]);
+        }
+    };
+
+
+
+    const isAllSelected =
+        currentOrders.length > 0 &&
+        currentOrders.every((o) => selectedOrders.includes(o._id));
+
 
     if (loading) {
         <Loading />
@@ -157,7 +104,7 @@ function Products() {
         return (
             <div className='bg-gray-50 px-8 py-6 space-y-6'>
                 <div className='flex justify-between items-center'>
-                    <div className='text-xl font-semibold text-gray-900'>Products</div>
+                    <div className='text-xl font-semibold text-gray-900'>Orders</div>
                 </div>
                 <div className='rounded-lg border border-red-200 bg-red-50 p-12'>
                     <div className='flex flex-col items-center justify-center gap-4'>
@@ -173,22 +120,19 @@ function Products() {
             </div>
         );
     }
-
     return (
         <div className="bg-gray-50 px-8 py-6 space-y-6">
             <div className='flex justify-between items-center'>
-                <div className='text-xl font-semibold text-gray-900'>Products</div>
-                <div className='flex gap-3 items-center font-semibold text-gray-900'>
+                <div className='text-xl font-semibold text-gray-900'>Orders</div>
+                {/* <div className='flex gap-3 items-center font-semibold text-gray-900'>
                     <button onClick={() => navigate("/create-products")} className="flex justify-between items-center gap-2 w-auto rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary/30">
                         <FiPlusCircle className='text-lg' /> Add Product
                     </button>
                     <button className="flex justify-between items-center gap-2 w-40 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30">
                         <FiDownload className='text-lg' /> Import Product
                     </button>
-                </div>
+                </div> */}
             </div>
-
-            {/* SEARCH + FILTERS */}
 
             <div className='rounded-lg border border-gray-200 bg-white text-gray-600'>
                 <div className='flex flex-col md:flex-row justify-between gap-4 p-5'>
@@ -207,27 +151,27 @@ function Products() {
                     <div className='flex items-center gap-3'>
                         <div className="relative w-full">
                             <select
-                                value={categoryFilter}
-                                onChange={(e) => dispatch(setCategoryFilter(e.target.value))}
+                                value={statusFilter}
+                                onChange={(e) => dispatch(setStatusFilter(e.target.value))}
                                 className="w-36 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
-                                <option value="">All Categories</option>
-                                {categories.map((c) => (
-                                    <option key={c}>{c}</option>
-                                ))}
+                                <option value="">All Status</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="refunded">Refunded</option>
                             </select>
                             <GoChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         </div>
                         <div className="relative w-full">
                             <select
-                                value={typeFilter}
-                                onChange={(e) => dispatch(setTypeFilter(e.target.value))}
+                                value={paymentFilter}
+                                onChange={(e) => dispatch(setPaymentFilter(e.target.value))}
                                 className="w-36 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
-                                <option value="">All Types</option>
-                                {types.map((t) => (
-                                    <option key={t}>{t}</option>
-                                ))}
+                                <option value="">All Payments</option>
+                                <option value="cash">Cash</option>
+                                <option value="upi">UPI</option>
+                                <option value="card">Card</option>
                             </select>
                             <GoChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                         </div>
@@ -236,7 +180,7 @@ function Products() {
 
                 <div>
                     <div className="overflow-x-auto bg-white max-h-[55vh] custom-scrollbar">
-                        <table className="w-full border-collapse text-sm">
+                        <table className="w-full text-sm border-collapse">
                             <thead className="bg-gray-200 text-gray-900">
                                 <tr>
                                     <th className="px-2 py-2 text-center">
@@ -252,25 +196,25 @@ function Products() {
                                             </div>
                                         </label>
                                     </th>
-                                    {/* <th className="px-2 py-2 text-left font-semibold">SKU</th> */}
-                                    <th className="px-2 py-2 text-left font-semibold">Product</th>
-                                    <th className="px-2 py-2 text-left font-semibold">Category</th>
-                                    <th className="px-2 py-2 text-left font-semibold">Type</th>
-                                    <th className="px-2 py-2 text-left font-semibold">Price</th>
-                                    <th className="px-2 py-2 text-left font-semibold">Unit</th>
-                                    <th className="px-2 py-2 text-left font-semibold">Qty</th>
+                                    <th className="px-2 py-2 text-left font-semibold">Order #</th>
+                                    {/* <th className="px-3 py-2 text-left">Items</th> */}
+                                    <th className="px-2 py-2 text-left font-semibold">Total</th>
+                                    <th className="px-2 py-2 text-left font-semibold">Payment</th>
+                                    <th className="px-2 py-2 text-left font-semibold">Status</th>
+                                    <th className="px-2 py-2 text-left font-semibold">Date</th>
                                     <th className="px-2 py-2 text-center font-semibold">Actions</th>
                                 </tr>
                             </thead>
+
                             <tbody className="divide-y divide-gray-300">
-                                {currentProducts.length > 0 ? (currentProducts.map((product) => (
-                                    <tr key={product._id} className="transition hover:bg-gray-50">
+                                {currentOrders.map((order) => (
+                                    <tr key={order._id} className="transition hover:bg-gray-50">
                                         <td className="px-4 py-1 text-center">
                                             <label className="flex items-center gap-2 cursor-pointer select-none justify-center">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedProducts.includes(product._id)}
-                                                    onChange={() => handleSelectProduct(product._id)}
+                                                    checked={selectedOrders.includes(order._id)}
+                                                    onChange={() => handleSelectOrder(order._id)}
                                                     className="peer hidden"
                                                 />
                                                 <div className="h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
@@ -278,44 +222,26 @@ function Products() {
                                                 </div>
                                             </label>
                                         </td>
-                                        {/* <td className="px-2 py-1 text-gray-700">{product.sku}</td> */}
-                                        <td className="px-2 py-1">
-                                            <div className="flex items-center gap-3 hover:cursor-pointer" onClick={() => navigate(`/products/${product.slug}`)}>
-                                                <div className="h-12 w-12 overflow-hidden rounded-lg border border-gray-300 bg-gray-100 ">
-                                                    <img
-                                                        src={product.image}
-                                                        alt={product.name}
-                                                        loading="lazy"
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="font-medium text-gray-800">{product.name}</div>
-                                            </div>
+                                        <td className="px-2 py-1 text-gray-700 font-semibold cursor-pointer" onClick={() => navigate(order._id)}>#{order.orderNumber}</td>
+                                        <td className="px-3 py-2 font-semibold">₹{order.total}</td>
+                                        <td className="px-3 py-2 capitalize">{order.paymentMethod}</td>
+                                        <td className="px-3 py-2">
+                                            <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-700">{order.status}</span>
                                         </td>
-                                        <td className="px-2 py-1 text-gray-600">{product.category}</td>
-                                        <td className="px-2 py-1 text-gray-600">{product.type}</td>
-                                        <td className="px-2 py-1 font-medium text-gray-800">₹{product.price}</td>
-                                        <td className="px-2 py-1 text-gray-600">{product.unit}</td>
-                                        <td className="px-2 py-1">
-                                            <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{product.stockQty}</span>
+
+                                        <td className="px-3 py-2 text-gray-600">
+                                            {new Date(order.createdAt).toLocaleString()}
                                         </td>
-                                        <td className="px-2 py-1">
+
+                                        <td className="px-3 py-2">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button
+                                                {/* <button
                                                     title="View"
-                                                    onClick={() => navigate(`/products/${product.slug}`)}
+                                                    onClick={() => navigate(order._id)}
                                                     className="group rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition hover:border-primary hover:bg-primary/10 hover:text-primary"
                                                 >
                                                     <LuEye className="text-lg group-hover:scale-110 transition" />
-                                                </button>
-                                                <button
-                                                    title="Edit"
-                                                    onClick={() => navigate(`/products/${product.slug}`)}
-                                                    className="group rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition hover:border-amber-500 hover:bg-amber-50 hover:text-amber-600"
-                                                >
-                                                    <CiEdit className="text-lg group-hover:scale-110 transition" />
-                                                </button>
-
+                                                </button> */}
                                                 <button
                                                     title="Delete"
                                                     onClick={() => handleDelete(product.slug)}
@@ -326,16 +252,7 @@ function Products() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))) : (
-                                    <tr>
-                                        <td
-                                            colSpan={9}
-                                            className="px-2 py-10 text-center text-gray-500"
-                                        >
-                                            No products found
-                                        </td>
-                                    </tr>
-                                )}
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -353,9 +270,9 @@ function Products() {
                                 <option value="50">50</option>
                             </select>
                             <span className="text-gray-500">
-                                {filteredProducts.length > 0
+                                {/* {filteredProducts.length > 0
                                     ? `${startIndex + 1}-${Math.min(endIndex, filteredProducts.length)} of ${filteredProducts.length}`
-                                    : "0 of 0"}
+                                    : "0 of 0"} */}
                             </span>
                         </div>
 
@@ -371,7 +288,7 @@ function Products() {
                             </button>
 
                             <div className="flex gap-1">
-                                {getPageNumbers().map((page, index) =>
+                                {/* {getPageNumbers().map((page, index) =>
                                     page === "..." ? (
                                         <span
                                             key={`ellipsis-${index}`}
@@ -393,7 +310,7 @@ function Products() {
                                             {page}
                                         </button>
                                     ),
-                                )}
+                                )} */}
                             </div>
 
                             <button
@@ -413,7 +330,7 @@ function Products() {
                 </div>
             </div>
         </div>
-    );
+    )
 }
 
-export default Products;
+export default Order

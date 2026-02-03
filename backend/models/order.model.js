@@ -17,25 +17,47 @@ const orderItemSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema(
     {
-        orderNumber: { type: String, required: true, unique: true, index: true },
-        cashierId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
+        orderNumber: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+        },
+        customerId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Customer",
+            required: false,
+            index: true,
+        },
         items: {
             type: [orderItemSchema],
             required: true,
-            
+
             validate: [
                 (v) => v.length > 0,
                 "POS order must have at least one item",
             ],
         },
-
         subtotal: { type: Number, required: true, min: 0 },
         tax: { type: Number, default: 0, min: 0 },
         discount: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
-        paymentMethod: { type: String, enum: ["cash", "upi", "card"], required: true },
-        paymentStatus: { type: String, enum: ["paid", "unpaid"], default: "paid" },
-        status: { type: String, enum: ["completed", "cancelled", "refunded"], default: "completed", index: true },
+        paymentMethod: {
+            type: String,
+            enum: ["cash", "upi", "card"],
+            required: true,
+        },
+        paymentStatus: {
+            type: String,
+            enum: ["paid", "unpaid"],
+            default: "paid",
+        },
+        status: {
+            type: String,
+            enum: ["completed", "cancelled", "refunded"],
+            default: "completed",
+            index: true,
+        },
         notes: { type: String },
         placedAt: { type: Date, default: Date.now, index: true },
     },
@@ -44,4 +66,4 @@ const orderSchema = new mongoose.Schema(
 
 const Order = mongoose.model("Order", orderSchema);
 
-export { Order };
+export default Order;

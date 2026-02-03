@@ -1,6 +1,8 @@
 import React from 'react'
+import { useNavigate } from "react-router-dom";
 
 function Cart({ cart, subtotal, increaseQty, decreaseQty }) {
+    const navigate = useNavigate();
     return (
         <>
             <h2 className="mb-4 text-lg font-semibold">Cart</h2>
@@ -60,7 +62,7 @@ function Cart({ cart, subtotal, increaseQty, decreaseQty }) {
                     <span>₹{subtotal}</span>
                 </div>
 
-                <button className="mt-4 w-full rounded-lg bg-primary py-3 text-white font-semibold">
+                <button onClick={() => navigate("/pos/checkout")} className="mt-4 w-full rounded-lg bg-primary py-3 text-white font-semibold">
                     Checkout
                 </button>
             </div>

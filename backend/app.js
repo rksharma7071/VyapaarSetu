@@ -11,6 +11,7 @@ import discountRouter from "./routes/discount.route.js";
 import orderRouter from "./routes/order.route.js";
 import razorpayRoutes from "./routes/razorpay.routes.js";
 import addressRoutes from "./routes/address.route.js";
+import customerRoutes from "./routes/customer.route.js";
 import cors from "cors";
 
 const app = express();
@@ -24,6 +25,7 @@ app.use("/product", productRouter);
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
 app.use("/review", reviewRouter);
+app.use("/customer", customerRoutes);
 app.use("/cart", cartRouter);
 app.use("/payment", paymentRouter);
 app.use("/discount", discountRouter);
