@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 
 const customerSchema = new mongoose.Schema(
     {
-        first_name: { type: String, required: true, trim: true },
-        last_name: { type: String, trim: true },
+        name: { type: String, required: true, trim: true },
         phone: { type: String, required: true, unique: true, index: true, trim: true },
         email: { type: String, trim: true, lowercase: true },
         notes: { type: String },

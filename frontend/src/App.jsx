@@ -9,10 +9,12 @@ import "slick-carousel/slick/slick-theme.css";
 function App() {
 
   return (
-    <div className='flex min-h-screen'>
+    <div className='flex h-screen overflow-hidden'>
       <SideBar />
-      <div className='flex-1'>
+      {/* MAIN AREA */}
+      <div className='flex flex-1 flex-col w-full'>
         <Header />
+        {/* SCROLLABLE MAIN CONTENT */}
         <Outlet />
       </div>
     </div>

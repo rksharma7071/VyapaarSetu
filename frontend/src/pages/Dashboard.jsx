@@ -119,62 +119,64 @@ function Dashboard() {
     };
 
     return (
-        <div className="bg-gray-50 px-8 py-6 space-y-6">
-            <div className="rounded-lg border border-gray-200 bg-white p-5 text-gray-600">
-                <span className="font-semibold text-gray-900">
-                    Hi John Smilga,
-                </span>{" "}
-                here’s what’s happening with your store today.
-            </div>
+        <main className="flex-1 overflow-y-auto bg-gray-50 px-4 py-4 sm:px-8 sm:py-6 custom-scrollbar">
+            <div className="space-y-6">
+                <div className="rounded-lg border border-gray-200 bg-white p-5">
+                    <span className="font-semibold text-gray-900">
+                        Hi John Smilga,
+                    </span>{" "}
+                    here’s what’s happening with your store today.
+                </div>
 
-            <div className="grid grid-cols-8 gap-6">
-                <div className="col-span-4 rounded-lg border border-gray-200 bg-white p-6 flex justify-between">
-                    <div>
-                        <p className="text-sm text-gray-500">Weekly Earnings</p>
-                        <h2 className="text-3xl font-bold text-gray-900 mt-2">
-                            $95,000.45
-                        </h2>
-                        <div className="flex items-center gap-2 mt-3 text-sm">
-                            <FaAngleUp className="text-green-500" />
-                            <span className="text-green-600 font-semibold">48%</span>
-                            <span className="text-gray-500">
-                                increase from last week
-                            </span>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-8">
+                    <div className="col-span-1 flex justify-between rounded-lg border border-gray-200 bg-white p-6 sm:col-span-2 lg:col-span-4">
+                        <div>
+                            <p className="text-sm text-gray-500">Weekly Earnings</p>
+                            <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                                $95,000.45
+                            </h2>
+                            <div className="flex items-center gap-2 mt-3 text-sm">
+                                <FaAngleUp className="text-green-500" />
+                                <span className="text-green-600 font-semibold">48%</span>
+                                <span className="text-gray-500">
+                                    increase from last week
+                                </span>
+                            </div>
                         </div>
+                        <img src="earning.png" alt="Earning" className="h-20" />
                     </div>
-                    <img src="earning.png" alt="Earning" className="h-20" />
+
+                    <div className="col-span-1 rounded-lg bg-indigo-600 p-6 text-white lg:col-span-2">
+                        <FaArrowUpRightDots className="text-3xl mb-4 opacity-80" />
+                        <h2 className="text-3xl font-bold">10,000+</h2>
+                        <p className="text-sm opacity-80 mt-1">Total Sales</p>
+                    </div>
+
+                    <div className="col-span-1 rounded-lg bg-emerald-600 p-6 text-white lg:col-span-2">
+                        <GiTakeMyMoney className="text-3xl mb-4 opacity-80" />
+                        <h2 className="text-3xl font-bold">800+</h2>
+                        <p className="text-sm opacity-80 mt-1">
+                            Purchased Goods
+                        </p>
+                    </div>
                 </div>
 
-                <div className="col-span-2 rounded-lg bg-indigo-600 text-white p-6">
-                    <FaArrowUpRightDots className="text-3xl mb-4 opacity-80" />
-                    <h2 className="text-3xl font-bold">10,000+</h2>
-                    <p className="text-sm opacity-80 mt-1">Total Sales</p>
+                <div className="rounded-lg border border-gray-200 bg-white p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                            Sales Analytics
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                            Last 7 Months
+                        </span>
+                    </div>
+                    <div className="h-80">
+                        <Line options={options} data={data} />
+                    </div>
                 </div>
 
-                <div className="col-span-2 rounded-lg bg-emerald-600 text-white p-6">
-                    <GiTakeMyMoney className="text-3xl mb-4 opacity-80" />
-                    <h2 className="text-3xl font-bold">800+</h2>
-                    <p className="text-sm opacity-80 mt-1">
-                        Purchased Goods
-                    </p>
-                </div>
             </div>
-
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                        Sales Analytics
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                        Last 7 Months
-                    </span>
-                </div>
-                <div className="h-80">
-                    <Line options={options} data={data} />
-                </div>
-            </div>
-
-        </div>
+        </main>
     );
 }
 

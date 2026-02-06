@@ -5,12 +5,17 @@ import Header from "./Header";
 import Cart from "./Cart";
 import Loading from "../Loading";
 import { fetchProducts } from "../../store/productsSlice";
+import {
+    addToCart,
+    increaseQty,
+    decreaseQty,
+} from "../../store/cartSlice";
 
 function Main() {
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.products);
 
-    const [cart, setCart] = useState([]);
+    const cart = useSelector((state) => state.cart.items);
 
     useEffect(() => {
         dispatch(fetchProducts());
@@ -19,36 +24,6 @@ function Main() {
     const subtotal = useMemo(() => {
         return cart.reduce((sum, item) => sum + item.price * item.qty, 0);
     }, [cart]);
-
-    const addToCart = (product) => {
-        setCart((prev) => {
-            const existing = prev.find((p) => p._id === product._id);
-            if (existing) {
-                return prev.map((p) =>
-                    p._id === product._id ? { ...p, qty: p.qty + 1 } : p
-                );
-            }
-            return [...prev, { ...product, qty: 1 }];
-        });
-    };
-
-    const increaseQty = (id) => {
-        setCart((prev) =>
-            prev.map((item) =>
-                item._id === id ? { ...item, qty: item.qty + 1 } : item
-            )
-        );
-    };
-
-    const decreaseQty = (id) => {
-        setCart((prev) =>
-            prev
-                .map((item) =>
-                    item._id === id ? { ...item, qty: item.qty - 1 } : item
-                )
-                .filter((item) => item.qty > 0)
-        );
-    };
 
     if (loading) {
         return <Loading />;
@@ -68,7 +43,8 @@ function Main() {
                         <Outlet
                             context={{
                                 addToCart,
-                                cart
+                                cart,
+                                addToCart: (product) => dispatch(addToCart(product))
                             }}
                         />
                     </div>

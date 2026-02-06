@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { HiOutlineMail } from "react-icons/hi";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
+import axios from "axios";
 
 function Login() {
+    const navigate = useNavigate();
     const [login, setLogin] = useState(() => {
         const stored = localStorage.getItem("login");
         return stored
             ? JSON.parse(stored)
-            : { email: "", password: "" };
+            : { email: "test@gmail.com", password: "test@123" };
     });
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -27,17 +29,41 @@ function Login() {
         setRemember(e.target.checked);
     }
 
-    const handleForm = (e) => {
+    const handleForm = async (e) => {
         e.preventDefault();
 
-        if (remember) {
-            localStorage.setItem("login", JSON.stringify(login));
-        }
-        else {
-            localStorage.removeItem("login");
+        if (!login.email || !login.password) {
+            alert("Email and Password are required.");
+            return;
         }
 
-        console.log("Login Data: ", login);
+        try {
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, login);
+
+            console.log("Login Data: ", data);
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+
+            if (remember) {
+                localStorage.setItem("login", JSON.stringify(login));
+            }
+            else {
+                localStorage.removeItem("login");
+            }
+            console.log("Login Success: ", data);
+
+            navigate("/")
+
+        } catch (error) {
+            const status = error.response?.status;
+            const message =
+                error.response?.data?.message ||
+                error.message ||
+                "Login failed";
+
+            console.error("Login Error:", status, message);
+            alert(message);
+        }
     }
 
     return (

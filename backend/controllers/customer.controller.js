@@ -4,7 +4,7 @@ import Customer from "../models/customer.model.js";
 export const getCustomer = async (req, res) => {
     try {
         const customers = await Customer.find()
-            .select("_id first_name last_name phone createdAt")
+            .select("_id name phone createdAt")
             .sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
@@ -33,7 +33,7 @@ export const getCustomerByID_Mobile = async (req, res) => {
         }
 
         const customer = await Customer.findOne(query).select(
-            "_id first_name last_name phone email createdAt",
+            "_id name phone email createdAt",
         );
 
         if (!customer) {
@@ -66,14 +66,10 @@ export const createCustomer = async (req, res) => {
             });
         }
 
-        const [first_name, ...rest] = name.trim().split(" ");
-        const last_name = rest.join(" ");
-
         let customer = await Customer.findOne({ phone, role: "customer" });
 
         if (customer) {
-            customer.first_name = first_name;
-            customer.last_name = last_name;
+            customer.name = name;
             await customer.save();
 
             return res.status(200).json({
@@ -85,8 +81,7 @@ export const createCustomer = async (req, res) => {
 
         customer = await Customer.create({
             phone,
-            first_name,
-            last_name,
+            name,
             role: "customer",
         });
 

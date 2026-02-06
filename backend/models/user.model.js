@@ -14,16 +14,14 @@ const permissionSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema(
     {
-        username: { type: String, required: true, unique: true },
         email: { type: String, required: true, unique: true },
         password: { type: String, required: true },
-        first_name: { type: String },
-        last_name: { type: String },
+        name: { type: String },
         role: { type: String, default: "customer" },
         otp: { type: String, default: false },
-        otpExpiry: { type: Date, default: false },
+        otpExpiry: { type: Date, default: null },
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 const addressSchema = new mongoose.Schema(
@@ -43,7 +41,7 @@ const addressSchema = new mongoose.Schema(
         country: { type: String, default: "India" },
         isDefault: { type: Boolean, default: false },
     },
-    { timestamps: true }
+    { timestamps: true },
 );
 
 const Permission = mongoose.model("Permission", permissionSchema);

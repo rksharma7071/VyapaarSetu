@@ -4,6 +4,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link } from 'react-router-dom';
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 import { LuUser } from "react-icons/lu";
+import axios from 'axios';
 
 function Register() {
     const [register, setRegister] = useState({ name: "", email: "", password: "", confirmpassword: "" });
@@ -27,22 +28,52 @@ function Register() {
         setRemember(e.target.checked);
     }
 
-    const handleForm = (e) => {
+    const handleForm = async (e) => {
         e.preventDefault();
 
-        if (remember) {
-            console.log("Remember");
+        const { name, email, password, confirmpassword } = register;
+
+        if (!name || !email || !password || !confirmpassword) {
+            alert("All fields are required");
+            return;
         }
-        else {
-            console.log("Not Remember");
+        if (password !== confirmpassword) {
+            alert("Password do not match");
+            return;
         }
 
-        console.log("Register Data: ", register);
+        try {
+            const payload = {
+                email,
+                password,
+                name,
+            }
+
+            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/signup`, payload)
+            if (remember) {
+                localStorage.setItem("register", JSON.stringify(register));
+            }
+            else {
+                localStorage.removeItem("register");
+            }
+
+            console.log("Signup Success: ", data);
+
+            window.location.href = "/";
+        } catch (error) {
+            const message = `Signup Error: ${error.response?.data?.message}` || "Registration failed";
+            console.error("Signup Error: ", message);
+            alert(message)
+        }
+
+
+
+
     }
 
     return (
         <div
-            className="min-h-dvh w-full bg-cover bg-center flex items-center justify-between flex-col py-6 md:py-20"
+            className="min-h-dvh w-full bg-cover bg-center flex items-center justify-between flex-col py-6 md:py-8"
             style={{ backgroundImage: "url('/background.jpg')" }}
         >
             <div>
@@ -79,7 +110,7 @@ function Register() {
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="password">Password<span className='text-red-500 pl-1'>*</span></label>
                         <input
-                            type={`${showPassword === false ? "password" : "text"}`}
+                            type={`${showPassword === false ? "password" : "text"} `}
                             value={register.password}
                             name="password"
                             onChange={handleChange}
@@ -93,7 +124,7 @@ function Register() {
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="confirmpassword">Confirm Password<span className='text-red-500 pl-1'>*</span></label>
                         <input
-                            type={`${showConfirmPassword === false ? "password" : "text"}`}
+                            type={`${showConfirmPassword === false ? "password" : "text"} `}
                             value={register.confirmpassword}
                             name="confirmpassword"
                             onChange={handleChange}
@@ -108,7 +139,7 @@ function Register() {
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" id="rememberme" onChange={handleRememberMe} className="peer hidden" />
                             <div
-                                className=" h-4 w-4 rounded-lg border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20"
+                                className=" h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20"
                             >
                                 <svg
                                     className="h-3 w-3 text-white peer-checked:block"

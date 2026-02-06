@@ -2,13 +2,14 @@ import React, { useMemo, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { setPosOrder, clearPosOrder } from "../../store/ordersSlice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import Input from "../UI/Input";
+import Textarea from "../UI/Textarea";
+import { clearCart } from "../../store/cartSlice";
 
 function Checkout() {
     const navigate = useNavigate();
-
-    const { cart = [] } = useOutletContext();
-
+    const cart = useSelector((state) => state.cart.items);
     const dispatch = useDispatch();
 
     const [customer, setCustomer] = useState({
@@ -57,11 +58,21 @@ function Checkout() {
 
             dispatch(setPosOrder(orderPayload));
 
-            const customerRes = await axios.post("/customers", customer);
+            const customerRes = await axios.post(`${import.meta.env.VITE_API_URL}/customer`, customer);
             const customerId = customerRes.data.data._id;
+            console.log({
+                customerId,
+                items: cart.map(item => ({
+                    productId: item._id,
+                    qty: item.qty,
+                })),
+                tax,
+                discount,
+                paymentMethod,
+                notes,
+            });
 
-            // 2️⃣ Create order
-            await axios.post("/orders", {
+            await axios.post(`${import.meta.env.VITE_API_URL}/order`, {
                 customerId,
                 items: cart.map(item => ({
                     productId: item._id,
@@ -74,10 +85,8 @@ function Checkout() {
             });
 
             alert("Order created successfully");
-
-            // 🟢 Clear POS order after success
+            dispatch(clearCart());
             dispatch(clearPosOrder());
-
             navigate("/pos");
         } catch (err) {
             alert(err.response?.data?.message || "Checkout failed");
@@ -94,24 +103,8 @@ function Checkout() {
                 <h2 className="mb-3 font-semibold">Customer</h2>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <input
-                        type="text"
-                        placeholder="Customer Name"
-                        className="rounded-lg border border-gray-300 p-3"
-                        value={customer.name}
-                        onChange={(e) =>
-                            setCustomer({ ...customer, name: e.target.value })
-                        }
-                    />
-                    <input
-                        type="tel"
-                        placeholder="Phone Number"
-                        className="rounded-lg border border-gray-300 p-3"
-                        value={customer.phone}
-                        onChange={(e) =>
-                            setCustomer({ ...customer, phone: e.target.value })
-                        }
-                    />
+                    <Input name="name" value={customer.name} placeholder="Customer Name" onChange={(e) => setCustomer({ ...customer, name: e.target.value })} />
+                    <Input type="tel" name="phone" value={customer.phone} placeholder="Phone Number" onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} />
                 </div>
             </div>
 
@@ -127,22 +120,18 @@ function Checkout() {
 
                     <div className="flex justify-between">
                         <span>Tax</span>
-                        <input
-                            type="number"
-                            className="w-24 rounded border border-gray-300 p-1 text-right"
-                            value={tax}
-                            onChange={(e) => setTax(e.target.value)}
-                        />
+                        <Input value={tax} onChange={(e) => setTax(e.target.value)} className={"!w-24"} />
                     </div>
 
                     <div className="flex justify-between">
                         <span>Discount</span>
-                        <input
+                        {/* <input
                             type="number"
                             className="w-24 rounded border border-gray-300 p-1 text-right"
                             value={discount}
                             onChange={(e) => setDiscount(e.target.value)}
-                        />
+                        /> */}
+                        <Input value={discount} onChange={(e) => setDiscount(e.target.value)} className={"!w-24"} />
                     </div>
 
                     <div className="flex justify-between font-semibold text-lg">
@@ -157,7 +146,7 @@ function Checkout() {
                 <h2 className="mb-3 font-semibold">Payment</h2>
 
                 <select
-                    className="mb-3 w-full rounded-lg border border-gray-300 p-3"
+                    className="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2.5 pl-4 mb-3 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                 >
@@ -165,14 +154,7 @@ function Checkout() {
                     <option value="card">Card</option>
                     <option value="upi">UPI</option>
                 </select>
-
-                <textarea
-                    placeholder="Notes (optional)"
-                    className="w-full rounded-lg border border-gray-300 p-3"
-                    rows="3"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                />
+                <Textarea placeholder="Notes (optional)" onChange={(e) => setNotes(e.target.value)} value={notes} />
             </div>
 
             {/* Actions */}

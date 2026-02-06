@@ -3,8 +3,6 @@ import axios from "axios";
 
 const api = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-/* -------------------- THUNKS -------------------- */
-
 export const fetchOrders = createAsyncThunk(
     "orders/fetchOrders",
     async (_, { rejectWithValue }) => {
@@ -32,7 +30,6 @@ export const fetchOrderById = createAsyncThunk(
         }
     },
 );
-/* -------------------- SLICE -------------------- */
 
 const ordersSlice = createSlice({
     name: "orders",
@@ -62,8 +59,6 @@ const ordersSlice = createSlice({
         clearOrders(state) {
             state.orders = [];
         },
-
-        // 🟢 POS reducers
         setPosOrder(state, action) {
             state.posOrder = action.payload;
         },

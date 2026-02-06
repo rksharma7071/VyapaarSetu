@@ -8,7 +8,7 @@ function generateOTP() {
 }
 
 async function handleAuthSignUp(req, res) {
-    const { email, password, first_name, last_name, role } = req.body;
+    const { email, password, name, role } = req.body;
 
     try {
         // Check if user already exists
@@ -16,9 +16,7 @@ async function handleAuthSignUp(req, res) {
             $or: [{ email }],
         });
         if (existingUser) {
-            return res
-                .status(400)
-                .json({ message: "Email already in use" });
+            return res.status(400).json({ message: "Email already in use" });
         }
 
         // Hash password
@@ -29,8 +27,7 @@ async function handleAuthSignUp(req, res) {
         const newUser = new User({
             email,
             password: hashedPassword,
-            first_name,
-            last_name,
+            name,
             role: role || "customer",
         });
 
@@ -42,21 +39,22 @@ async function handleAuthSignUp(req, res) {
             process.env.JWT_SECRET,
             {
                 expiresIn: "1d",
-            }
+            },
         );
         res.json({
             token,
             user: {
                 id: newUser._id,
                 email: newUser.email,
-                first_name: newUser.first_name,
-                last_name: newUser.last_name,
+                name: newUser.name,
                 role: newUser.role,
             },
         });
     } catch (error) {
         console.error(error.message);
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({
+            message: error.message || "Server error",
+        });
     }
 }
 
@@ -91,7 +89,7 @@ async function handleAuthLogin(req, res) {
         const token = jwt.sign(
             { id: user._id, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: "1d" }
+            { expiresIn: "1d" },
         );
 
         // 4. Respond with token and user info
@@ -100,8 +98,7 @@ async function handleAuthLogin(req, res) {
             user: {
                 id: user._id,
                 email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
+                name: user.name,
                 role: user.role,
             },
         });

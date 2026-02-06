@@ -5,6 +5,7 @@ import { GoScreenFull } from "react-icons/go";
 import { RiResetRightFill } from "react-icons/ri";
 import { TiShoppingCart } from "react-icons/ti";
 import { useState } from "react";
+import { FaLaptop } from "react-icons/fa";
 
 function Header() {
     const [open, setOpen] = useState(false);
@@ -33,7 +34,10 @@ function Header() {
 
                 {/* Desktop Actions */}
                 <div className="hidden md:flex items-center gap-2">
-
+                    <Link to={'/pos'} className='flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90'>
+                        <FaLaptop />
+                        POS
+                    </Link>
                     <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90">
                         <TiShoppingCart className="text-lg" />
                         Orders

@@ -1,8 +1,21 @@
 import React from 'react'
 import { useNavigate } from "react-router-dom";
+import {
+    addToCart,
+    increaseQty,
+    decreaseQty,
+} from "../../store/cartSlice";
+import { useDispatch, useSelector } from 'react-redux';
 
-function Cart({ cart, subtotal, increaseQty, decreaseQty }) {
+
+function Cart() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
+    const cart = useSelector((state) => state.cart.items);
+    const subtotal = cart.reduce(
+        (sum, item) => sum + item.price * item.qty,
+        0
+    );
     return (
         <>
             <h2 className="mb-4 text-lg font-semibold">Cart</h2>
@@ -25,15 +38,13 @@ function Cart({ cart, subtotal, increaseQty, decreaseQty }) {
                             />
                             <div>
                                 <p className="text-sm font-medium">{item.name}</p>
-                                <p className="text-xs text-gray-500">
-                                    ₹{item.price} × {item.qty}
-                                </p>
+                                <p className="text-xs text-gray-500">₹{item.price} × {item.qty}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center rounded-lg border border-gray-300">
+                        <div className="flex items-center rounded-lg border border-gray-300 overflow-hidden">
                             <button
-                                onClick={() => decreaseQty(item._id)}
+                                onClick={() => dispatch(decreaseQty(item._id))}
                                 className="h-8 w-8 text-lg hover:bg-gray-100"
                             >
                                 −
@@ -42,7 +53,7 @@ function Cart({ cart, subtotal, increaseQty, decreaseQty }) {
                                 {item.qty}
                             </span>
                             <button
-                                onClick={() => increaseQty(item._id)}
+                                onClick={() => dispatch(increaseQty(item._id))}
                                 className="h-8 w-8 text-lg hover:bg-gray-100"
                             >
                                 +

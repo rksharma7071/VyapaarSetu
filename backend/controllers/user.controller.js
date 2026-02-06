@@ -13,8 +13,7 @@ async function handleCreateNewUser(req, res) {
         if (
             !body.email ||
             !body.password ||
-            !body.first_name ||
-            !body.last_name ||
+            !body.name ||
             !body.role
         ) {
             return res.status(400).json({ message: "All fields are required..." });
@@ -23,8 +22,7 @@ async function handleCreateNewUser(req, res) {
         const result = await User.create({
             email: body.email,
             password: body.password,
-            first_name: body.first_name,
-            last_name: body.last_name,
+            name: body.name,
             role: "author",
         });
 
@@ -45,7 +43,7 @@ async function handleGetUserUinsgId(req, res) {
 async function handleUpdateUserUsingId(req, res) {
     try {
         const { id } = req.params;
-        const { email, first_name, last_name, role } = req.body;
+        const { email, name, role } = req.body;
 
         const user = await User.findById(id);
         if (!user) {
@@ -53,8 +51,7 @@ async function handleUpdateUserUsingId(req, res) {
         }
 
         if (email) user.email = email;
-        if (first_name) user.first_name = first_name;
-        if (last_name) user.last_name = last_name;
+        if (name) user.name = name;
         if (role) user.role = role;
 
         const updatedUser = await user.save();
@@ -64,8 +61,7 @@ async function handleUpdateUserUsingId(req, res) {
             user: {
                 id: updatedUser._id,
                 email: updatedUser.email,
-                first_name: updatedUser.first_name,
-                last_name: updatedUser.last_name,
+                name: updatedUser.name,
                 role: updatedUser.role,
                 createdAt: updatedUser.createdAt,
                 updatedAt: updatedUser.updatedAt,

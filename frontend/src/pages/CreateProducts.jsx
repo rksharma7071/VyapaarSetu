@@ -7,6 +7,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from "react-icons/fa6";
 import { GoChevronDown } from 'react-icons/go';
 import axios from 'axios';
+import Input from '../components/UI/Input';
+import Textarea from '../components/UI/Textarea';
 
 function CreateProducts() {
     const navigate = useNavigate();
@@ -78,95 +80,49 @@ function CreateProducts() {
                 <form onSubmit={handleForm} className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Product Name <span className="text-red-500">*</span></label>
-                        <input
-                            type="text"
-                            name="name"
-                            value={product.name}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input name="name" value={product.name} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Slug <span className="text-red-500">*</span></label>
-                        <input
-                            type="text"
-                            name="slug"
-                            value={product.slug}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input name="slug" value={product.slug} onChange={handleChange} />
                     </div>
 
                     <div className="md:col-span-2">
                         <label className="mb-2 block text-sm font-medium text-gray-700">Description <span className="text-red-500">*</span></label>
-                        <textarea
-                            rows={4}
-                            name="description"
-                            value={product.description}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Textarea rows={4} name="description" onChange={handleChange} value={product.description} />
                     </div>
 
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Category <span className="text-red-500">*</span></label>
-                        <input
-                            type="text"
-                            name="category"
-                            value={product.category}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input name="category" value={product.category} onChange={handleChange} />
+
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Price <span className="text-red-500">*</span></label>
-                        <input
-                            type="number"
-                            name="price"
-                            value={product.price}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input type="number" name="price" value={product.price} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">SKU <span className="text-red-500">*</span></label>
-                        <input
-                            type="text"
-                            name="sku"
-                            value={product.sku}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-smplaceholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input name="sku" value={product.sku} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Tax Rate (%) <span className="text-red-500">*</span></label>
-                        <input
+                        {/* <input
                             type="number"
                             name="taxRate"
                             value={product.taxRate}
                             onChange={handleChange}
                             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        /> */}
+                        <Input name="taxRate" value={product.taxRate} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Stock Quantity <span className="text-red-500">*</span></label>
-                        <input
-                            type="number"
-                            name="stockQty"
-                            value={product.stockQty}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input name="stockQty" value={product.stockQty} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Unit <span className="text-red-500">*</span></label>
-                        <input
-                            type="text"
-                            name="unit"
-                            value={product.unit}
-                            onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
-                        />
+                        <Input name="unit" value={product.unit} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Image <span className="text-red-500">*</span></label>

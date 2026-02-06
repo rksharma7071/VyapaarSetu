@@ -1,10 +1,16 @@
 import React, { useMemo, useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useOutletContext } from "react-router-dom";
-
+import {
+    addToCart,
+    increaseQty,
+    decreaseQty,
+} from "../store/cartSlice.js";
 function POS() {
+    const dispatch = useDispatch();
+
     const { products } = useSelector((state) => state.products);
-    const { addToCart } = useOutletContext();
+    // const { addToCart, setCart } = useOutletContext();
 
     const [activeCategory, setActiveCategory] = useState("All");
 
@@ -29,10 +35,9 @@ function POS() {
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
                             className={`rounded-full px-4 py-2 text-sm border
-                                ${
-                                    activeCategory === cat
-                                        ? "bg-primary text-white border-primary"
-                                        : "bg-white border-gray-300 hover:border-primary"
+                                ${activeCategory === cat
+                                    ? "bg-primary text-white border-primary"
+                                    : "bg-white border-gray-300 hover:border-primary"
                                 }`}
                         >
                             {cat}
@@ -46,7 +51,7 @@ function POS() {
                     {filteredProducts.map((product) => (
                         <button
                             key={product._id}
-                            onClick={() => addToCart(product)}
+                            onClick={() => dispatch(addToCart(product))}
                             className="rounded-xl border border-gray-300 bg-white p-3 transition hover:shadow-md"
                         >
                             <img
