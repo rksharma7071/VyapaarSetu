@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { FaArrowLeft } from "react-icons/fa6";
 import { GoChevronDown } from 'react-icons/go';
 import axios from 'axios';
-import Input from '../components/UI/Input';
+import Input from '../components/UI/Input.jsx';
+import Textarea from '../components/UI/Textarea.jsx';
 
 function EditProduct() {
     const loader = useLoaderData();

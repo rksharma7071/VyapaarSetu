@@ -31,7 +31,7 @@ function Header() {
     return (
         <>
             {/* HEADER */}
-            <header className="relative z-50 flex h-20 items-center justify-between border-b border-gray-300 bg-white px-4">
+            <header className="relative z-50 flex h-20 items-center justify-between border-b border-gray-300 bg-white p-4">
                 <button className="text-2xl md:hidden" onClick={() => setOpen(true)} ><GiHamburgerMenu /></button>
 
                 {/* Desktop Search */}
