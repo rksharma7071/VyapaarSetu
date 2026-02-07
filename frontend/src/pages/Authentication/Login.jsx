@@ -4,6 +4,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link, useNavigate } from 'react-router-dom';
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 import axios from "axios";
+import Input from "../../components/UI/Input";
 
 function Login() {
     const navigate = useNavigate();
@@ -43,6 +44,7 @@ function Login() {
             console.log("Login Data: ", data);
             localStorage.setItem("token", data.token);
             localStorage.setItem("user", JSON.stringify(data.user));
+            axios.defaults.headers.common.Authorization = `Bearer ${data.token}`;
 
             if (remember) {
                 localStorage.setItem("login", JSON.stringify(login));
@@ -52,7 +54,11 @@ function Login() {
             }
             console.log("Login Success: ", data);
 
-            navigate("/")
+            if (data.user?.subscriptionActive) {
+                navigate("/");
+            } else {
+                navigate("/pricing");
+            }
 
         } catch (error) {
             const status = error.response?.status;
@@ -65,6 +71,15 @@ function Login() {
             alert(message);
         }
     }
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        if (!token || !user) return;
+        if (!user.storeId) return navigate("/store-setup");
+        if (!user.subscriptionActive) return navigate("/pricing");
+        return navigate("/");
+    }, [navigate]);
 
     return (
         <div
@@ -80,26 +95,28 @@ function Login() {
                 <form onSubmit={handleForm}>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="email">Email<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type="email"
                             name='email'
                             onChange={handleChange}
                             autoComplete="email"
                             value={login.email}
                             id='email'
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500"><HiOutlineMail /></span>
                     </div>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="password">Password<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type={`${showPassword === false ? "password" : "text"}`}
                             value={login.password}
                             name="password"
                             onChange={handleChange}
                             id='password'
                             autoComplete="current-password"
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span onClick={handleShowPassword} className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500 cursor-pointer">
                             {showPassword === false ? <FiEye /> : <FiEyeOff />}
                         </span>

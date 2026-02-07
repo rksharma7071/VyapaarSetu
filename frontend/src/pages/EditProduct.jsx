@@ -10,6 +10,7 @@ import { GoChevronDown } from 'react-icons/go';
 import axios from 'axios';
 import Input from '../components/UI/Input.jsx';
 import Textarea from '../components/UI/Textarea.jsx';
+import { useEffect } from "react";
 
 function EditProduct() {
     const loader = useLoaderData();
@@ -17,12 +18,28 @@ function EditProduct() {
     const [product, setProduct] = useState(loader || {});
     const [preview, setPreview] = useState(product?.image || "");
     const [file, setFile] = useState(null);
+    const [categories, setCategories] = useState([]);
+    const [slugEdited, setSlugEdited] = useState(false);
 
     const navigate = useNavigate();
 
+    const toSlug = (value) =>
+        String(value || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-");
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setProduct((prev) => ({ ...prev, [name]: value }))
+        setProduct((prev) => {
+            const next = { ...prev, [name]: value };
+            if (name === "name" && !slugEdited) {
+                next.slug = toSlug(value);
+            }
+            return next;
+        });
     }
 
     const handleRememberMe = (e) => {
@@ -64,17 +81,24 @@ function EditProduct() {
 
     }
 
+    useEffect(() => {
+        axios
+            .get(`${import.meta.env.VITE_API_URL}/category`)
+            .then((res) => setCategories(res.data?.data || []))
+            .catch(() => setCategories([]));
+    }, []);
+
     return (
-        <div className=' bg-gray-50 px-8 py-6 space-y-6'>
+        <div className=' bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto'>
             <div className='flex justify-between items-center'>
                 <div className='text-xl font-semibold text-gray-900'>Edit Product</div>
                 <div className='flex gap-3 items-center font-semibold text-gray-900'>
                     <button
-                        className="flex justify-between items-center gap-2 w-42 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="flex justify-between items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30"
                         type='submit'
                         onClick={() => navigate('/products')}
                     >
-                        <FaArrowLeft className='text-lg' />Back to Products</button>
+                        <FaArrowLeft className='text-lg' /></button>
                 </div>
             </div>
 
@@ -86,7 +110,14 @@ function EditProduct() {
                     </div>
                     <div>
                         <label htmlFor='slug' className="mb-2 block text-sm font-medium text-gray-700">Slug <span className="text-red-500">*</span></label>
-                        <Input name="slug" value={product.slug} onChange={handleChange} />
+                        <Input
+                            name="slug"
+                            value={product.slug}
+                            onChange={(e) => {
+                                setSlugEdited(true);
+                                handleChange(e);
+                            }}
+                        />
                     </div>
 
                     <div className="md:col-span-2">
@@ -97,7 +128,17 @@ function EditProduct() {
 
                     <div>
                         <label htmlFor='category' className="mb-2 block text-sm font-medium text-gray-700">Category <span className="text-red-500">*</span></label>
-                        <Input name="category" value={product.category} onChange={handleChange} />
+                        <Input
+                            name="category"
+                            value={product.category}
+                            onChange={handleChange}
+                            list="category-options"
+                        />
+                        <datalist id="category-options">
+                            {categories.map((c) => (
+                                <option key={c._id} value={c.name} />
+                            ))}
+                        </datalist>
                     </div>
                     <div>
                         <label htmlFor='price' className="mb-2 block text-sm font-medium text-gray-700">Price <span className="text-red-500">*</span></label>
@@ -117,7 +158,7 @@ function EditProduct() {
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Unit <span className="text-red-500">*</span></label>
-                        <Input type="number" name="unit" value={product.unit} onChange={handleChange} />
+                        <Input name="unit" value={product.unit} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">

@@ -12,6 +12,15 @@ import orderRouter from "./routes/order.route.js";
 import razorpayRoutes from "./routes/razorpay.routes.js";
 import addressRoutes from "./routes/address.route.js";
 import customerRoutes from "./routes/customer.route.js";
+import storeRoutes from "./routes/store.route.js";
+import categoryRoutes from "./routes/category.route.js";
+import brandRoutes from "./routes/brand.route.js";
+import supplierRoutes from "./routes/supplier.route.js";
+import inventoryRoutes from "./routes/inventory.route.js";
+import purchaseOrderRoutes from "./routes/purchaseOrder.route.js";
+import invoiceRoutes from "./routes/invoice.route.js";
+import returnRoutes from "./routes/return.route.js";
+import reportRoutes from "./routes/report.route.js";
 import cors from "cors";
 
 const app = express();
@@ -32,6 +41,15 @@ app.use("/discount", discountRouter);
 app.use("/order", orderRouter);
 app.use("/razorpay", razorpayRoutes);
 app.use("/address", addressRoutes);
+app.use("/store", storeRoutes);
+app.use("/category", categoryRoutes);
+app.use("/brand", brandRoutes);
+app.use("/supplier", supplierRoutes);
+app.use("/inventory", inventoryRoutes);
+app.use("/purchase-order", purchaseOrderRoutes);
+app.use("/invoice", invoiceRoutes);
+app.use("/return", returnRoutes);
+app.use("/report", reportRoutes);
 
 app.get("/", (req, res) => {
     res.status(200).json({
@@ -47,6 +65,15 @@ app.get("/", (req, res) => {
         "/order": "Order",
         "/address": "Address",
         "/razorpay": "razorpay",
+        "/store": "Store",
+        "/category": "Category",
+        "/brand": "Brand",
+        "/supplier": "Supplier",
+        "/inventory": "Inventory",
+        "/purchase-order": "Purchase Order",
+        "/invoice": "Invoice",
+        "/return": "Return",
+        "/report": "Report",
     });
 });
 

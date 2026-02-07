@@ -3,7 +3,11 @@ import { Discount } from "../models/discount.model.js";
 
 async function getAllDiscount(req, res) {
     try {
-        const discount = await Discount.find({});
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const discount = await Discount.find({ storeId });
         return res.status(200).json(discount || []);
     } catch (error) {
         return res.status(500).json({ message: "Internal Server Error" });
@@ -16,7 +20,11 @@ async function getDiscountById(req, res) {
         return res.status(400).json({ message: "Invalid Discount ID" });
     }
 
-    const discount = await Discount.findById(id);
+    const storeId = req.user?.storeId;
+    if (!storeId) {
+        return res.status(403).json({ message: "Store not linked" });
+    }
+    const discount = await Discount.findOne({ _id: id, storeId });
     if (!discount) {
         return res.status(404).json({ message: "Discount not found" });
     }
@@ -34,6 +42,10 @@ async function createDiscount(req, res) {
             usage_limit,
             active,
         } = req.body;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
 
         if (!discount_code || !discount_type || amount === undefined) {
             return res.status(400).json({
@@ -41,7 +53,7 @@ async function createDiscount(req, res) {
             });
         }
 
-        const existingDiscount = await Discount.findOne({ discount_code });
+        const existingDiscount = await Discount.findOne({ discount_code, storeId });
         if (existingDiscount) {
             return res
                 .status(409)
@@ -56,6 +68,7 @@ async function createDiscount(req, res) {
             ends_at,
             usage_limit,
             active,
+            storeId,
         });
 
         return res
@@ -75,7 +88,11 @@ async function updateDiscount(req, res) {
             return res.status(400).json({ message: "Invalid Discount ID" });
         }
 
-        const discount = await Discount.findById(id);
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const discount = await Discount.findOne({ _id: id, storeId });
         if (!discount) {
             return res.status(404).json({ message: "Discount not found" });
         }
@@ -106,7 +123,11 @@ async function deleteDiscount(req, res) {
             return res.status(400).json({ message: "Invalid Discount ID" });
         }
 
-        const discount = await Discount.findByIdAndDelete(id);
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const discount = await Discount.findOneAndDelete({ _id: id, storeId });
         if (!discount) {
             return res.status(404).json({ message: "Discount not found" });
         }
@@ -123,6 +144,10 @@ async function deleteDiscount(req, res) {
 async function applyDiscount(req, res) {
     try {
         const { code, amount } = req.body;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
 
         if (!code || amount === undefined) {
             return res
@@ -132,6 +157,7 @@ async function applyDiscount(req, res) {
 
         const discount = await Discount.findOne({
             discount_code: code,
+            storeId,
             active: true,
         });
         
@@ -148,19 +174,27 @@ async function applyDiscount(req, res) {
         if (discount.ends_at && now > discount.ends_at)
             return res.status(400).json({ message: "Discount has expired" });
 
-        if (discount.usage_limit !== undefined && discount.usage_limit <= 0)
+        if (
+            discount.usage_limit !== undefined &&
+            discount.usage_limit !== null &&
+            discount.used_count >= discount.usage_limit
+        )
             return res
                 .status(400)
                 .json({ message: "Discount usage limit exceeded" });
 
         let discountAmount = 0;
 
-        if (discount.discount_type === "flat") discountAmount = discount.amount;
+        if (discount.discount_type === "fixed_amount")
+            discountAmount = discount.amount;
 
         if (discount.discount_type === "percentage")
             discountAmount = Math.round((amount * discount.amount) / 100);
 
         discountAmount = Math.min(discountAmount, amount);
+
+        discount.used_count += 1;
+        await discount.save();
 
         return res
             .status(200)

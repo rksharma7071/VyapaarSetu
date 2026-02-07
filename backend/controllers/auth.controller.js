@@ -2,13 +2,14 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { User } from "../models/user.model.js";
+import Store from "../models/store.model.js";
 
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 async function handleAuthSignUp(req, res) {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, storeId } = req.body;
 
     try {
         // Check if user already exists
@@ -17,6 +18,12 @@ async function handleAuthSignUp(req, res) {
         });
         if (existingUser) {
             return res.status(400).json({ message: "Email already in use" });
+        }
+        if (storeId) {
+            const store = await Store.findById(storeId);
+            if (!store) {
+                return res.status(400).json({ message: "Invalid storeId" });
+            }
         }
 
         // Hash password
@@ -29,13 +36,14 @@ async function handleAuthSignUp(req, res) {
             password: hashedPassword,
             name,
             role: role || "customer",
+            storeId: storeId || null,
         });
 
         await newUser.save();
 
         // Generate JWT token
         const token = jwt.sign(
-            { id: newUser._id, role: newUser.role },
+            { id: newUser._id, role: newUser.role, storeId: newUser.storeId },
             process.env.JWT_SECRET,
             {
                 expiresIn: "1d",
@@ -48,6 +56,8 @@ async function handleAuthSignUp(req, res) {
                 email: newUser.email,
                 name: newUser.name,
                 role: newUser.role,
+                storeId: newUser.storeId || null,
+                subscriptionActive: false,
             },
         });
     } catch (error) {
@@ -87,12 +97,23 @@ async function handleAuthLogin(req, res) {
         }
 
         const token = jwt.sign(
-            { id: user._id, role: user.role },
+            { id: user._id, role: user.role, storeId: user.storeId },
             process.env.JWT_SECRET,
             { expiresIn: "1d" },
         );
 
         // 4. Respond with token and user info
+        const storeId = user.storeId || null;
+        let subscriptionActive = false;
+        if (storeId) {
+            const storeDoc = await Store.findById(storeId).lean();
+            if (storeDoc?.subscriptionStatus === "active") {
+                subscriptionActive = !storeDoc.subscriptionEnd
+                    ? true
+                    : new Date(storeDoc.subscriptionEnd) > new Date();
+            }
+        }
+
         return res.json({
             token,
             user: {
@@ -100,6 +121,8 @@ async function handleAuthLogin(req, res) {
                 email: user.email,
                 name: user.name,
                 role: user.role,
+                storeId: user.storeId || null,
+                subscriptionActive,
             },
         });
     } catch (error) {

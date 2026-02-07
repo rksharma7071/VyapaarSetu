@@ -16,6 +16,7 @@ import {
     setTypeFilter,
 } from "../store/productsSlice";
 import Loading from "../components/Loading";
+import Input from "../components/UI/Input";
 
 function Products() {
     const dispatch = useDispatch();
@@ -111,6 +112,10 @@ function Products() {
         }
     };
 
+    const handleRefresh = () => {
+        dispatch(fetchProducts());
+    };
+
     const getPageNumbers = () => {
         const pages = [];
         const maxVisiblePages = 5;
@@ -155,7 +160,7 @@ function Products() {
 
     if (error) {
         return (
-            <div className='bg-gray-50 px-8 py-6 space-y-6'>
+            <div className='bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto'>
                 <div className='flex justify-between items-center'>
                     <div className='text-xl font-semibold text-gray-900'>Products</div>
                 </div>
@@ -175,15 +180,15 @@ function Products() {
     }
 
     return (
-        <div className="bg-gray-50 px-8 py-6 space-y-6">
+        <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
             <div className='flex justify-between items-center'>
                 <div className='text-xl font-semibold text-gray-900'>Products</div>
                 <div className='flex gap-3 items-center font-semibold text-gray-900'>
                     <button onClick={() => navigate("/create-products")} className="flex justify-between items-center gap-2 w-auto rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary/30">
-                        <FiPlusCircle className='text-lg' /> Add Product
+                        <FiPlusCircle className='text-lg' /> Add
                     </button>
-                    <button className="flex justify-between items-center gap-2 w-40 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                        <FiDownload className='text-lg' /> Import Product
+                    <button className="flex justify-between items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30">
+                        <FiDownload className='text-lg' /> Import
                     </button>
                 </div>
             </div>
@@ -197,11 +202,11 @@ function Products() {
                         <span className="absolute left-3 text-gray-500">
                             <IoSearch className="text-lg" />
                         </span>
-                        <input
+                        <Input
                             placeholder="Search…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-5 text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                            className="pl-10 pr-5"
                         />
                     </div>
                     <div className='flex items-center gap-3'>

@@ -9,6 +9,7 @@ function Textarea({
     rows = 3,
     disabled = false,
     className = "",
+    ...rest
 }) {
     return (
         <textarea
@@ -19,6 +20,7 @@ function Textarea({
             placeholder={placeholder}
             rows={rows}
             disabled={disabled}
+            {...rest}
             className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none ${className}`}
         />
     );

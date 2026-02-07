@@ -2,10 +2,18 @@ import mongoose from "mongoose";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import Counter from "../models/counter.model.js";
+import Store from "../models/store.model.js";
+import { decrementInventoryWithBatches, incrementInventory } from "../utils/inventory.js";
+import Invoice from "../models/invoice.model.js";
+import Customer from "../models/customer.model.js";
 
 async function getAllOrder(req, res) {
     try {
-        const orders = await Order.find({})
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const orders = await Order.find({ storeId })
             .populate("customerId", "name email")
             .populate("items.productId", "name price")
             .sort({ createdAt: -1 });
@@ -27,6 +35,10 @@ async function getAllOrder(req, res) {
 async function getOrderById(req, res) {
     try {
         const { id } = req.params;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({
@@ -35,7 +47,7 @@ async function getOrderById(req, res) {
             });
         }
 
-        const order = await Order.findById(id)
+        const order = await Order.findOne({ _id: id, storeId })
             .populate("customerId", "name email")
             .populate("items.productId", "name price");
 
@@ -63,18 +75,42 @@ async function createOrder(req, res) {
     try {
         const {
             customerId,
+            customer,
             items,
             tax = 0,
             discount = 0,
             paymentMethod,
             notes,
         } = req.body;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+
+        if (!storeId || !mongoose.Types.ObjectId.isValid(storeId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid store ID",
+            });
+        }
 
         if (customerId && !mongoose.Types.ObjectId.isValid(customerId)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid customer ID",
             });
+        }
+        if (customerId) {
+            const customerDoc = await Customer.findOne({
+                _id: customerId,
+                storeId,
+            });
+            if (!customerDoc) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Customer does not belong to this store",
+                });
+            }
         }
 
         if (!items || !items.length) {
@@ -84,11 +120,25 @@ async function createOrder(req, res) {
             });
         }
 
+        const store = await Store.findById(storeId);
+        const storeState = store?.state || "";
+        const customerState = customer?.state || "";
+        const isInterstate =
+            storeState && customerState
+                ? storeState.toLowerCase() !== customerState.toLowerCase()
+                : false;
+
         let subtotal = 0;
+        let cgstTotal = 0;
+        let sgstTotal = 0;
+        let igstTotal = 0;
         const orderItems = [];
 
         for (const item of items) {
-            const product = await Product.findById(item.productId);
+            const product = await Product.findOne({
+                _id: item.productId,
+                storeId,
+            });
 
             if (!product) {
                 return res.status(404).json({
@@ -111,8 +161,23 @@ async function createOrder(req, res) {
 
             subtotal += totalPrice;
 
-            product.stockQty -= qty;
-            await product.save();
+            await decrementInventoryWithBatches(storeId, product._id, qty);
+
+            let cgst = 0;
+            let sgst = 0;
+            let igst = 0;
+            const gstRate = Number(product.gstRate || product.taxRate || 0);
+            if (gstRate > 0) {
+                if (isInterstate) {
+                    igst = (totalPrice * gstRate) / 100;
+                } else {
+                    cgst = (totalPrice * gstRate) / 200;
+                    sgst = (totalPrice * gstRate) / 200;
+                }
+            }
+            cgstTotal += cgst;
+            sgstTotal += sgst;
+            igstTotal += igst;
 
             orderItems.push({
                 productId: product._id,
@@ -120,10 +185,16 @@ async function createOrder(req, res) {
                 qty,
                 unitPrice,
                 totalPrice,
+                hsn: product.hsn,
+                gstRate,
+                cgst,
+                sgst,
+                igst,
             });
         }
 
-        const total = subtotal + Number(tax) - Number(discount);
+        const taxTotal = cgstTotal + sgstTotal + igstTotal;
+        const total = subtotal + taxTotal - Number(discount);
 
         const counter = await Counter.findOneAndUpdate(
             { name: "pos_order" },
@@ -133,17 +204,59 @@ async function createOrder(req, res) {
 
         const order = await Order.create({
             orderNumber: counter.seq.toString(),
+            storeId,
             customerId,
+            customer,
             items: orderItems,
             subtotal,
-            tax,
+            tax: taxTotal,
             discount,
             total,
+            cgstTotal,
+            sgstTotal,
+            igstTotal,
             paymentMethod,
-            paymentStatus: "paid",
+            paymentStatus: paymentMethod === "razorpay" ? "unpaid" : "paid",
             status: "completed",
             notes,
         });
+
+        const existingInvoice = await Invoice.findOne({ orderId: order._id });
+        if (!existingInvoice) {
+            const invoiceNumber = await Counter.findOneAndUpdate(
+                { name: "invoice" },
+                { $inc: { seq: 1 } },
+                { new: true, upsert: true },
+            );
+
+            await Invoice.create({
+                invoiceNumber: `INV-${invoiceNumber.seq}`,
+                orderId: order._id,
+                storeId,
+                customer,
+                items: orderItems.map((i) => ({
+                    productId: i.productId,
+                    name: i.name,
+                    hsn: i.hsn,
+                    qty: i.qty,
+                    unitPrice: i.unitPrice,
+                    discount: 0,
+                    taxableValue: i.totalPrice,
+                    gstRate: i.gstRate,
+                    cgst: i.cgst,
+                    sgst: i.sgst,
+                    igst: i.igst,
+                    total: i.totalPrice + i.cgst + i.sgst + i.igst,
+                })),
+                subtotal,
+                discountTotal: discount,
+                taxableTotal: subtotal,
+                cgstTotal,
+                sgstTotal,
+                igstTotal,
+                grandTotal: total,
+            });
+        }
 
         return res.status(201).json({
             success: true,
@@ -173,7 +286,11 @@ async function updateOrder(req, res) {
             });
         }
 
-        const order = await Order.findById(id).session(session);
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const order = await Order.findOne({ _id: id, storeId }).session(session);
         if (!order) {
             return res.status(404).json({
                 success: false,
@@ -212,11 +329,7 @@ async function updateOrder(req, res) {
 
         if (shouldRestoreStock) {
             for (const item of order.items) {
-                await Product.findByIdAndUpdate(
-                    item.productId,
-                    { $inc: { stockQty: item.qty } },
-                    { session },
-                );
+                await incrementInventory(order.storeId, item.productId, item.qty);
             }
         }
 
@@ -262,7 +375,11 @@ async function deleteOrder(req, res) {
             });
         }
 
-        const order = await Order.findById(id).session(session);
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const order = await Order.findOne({ _id: id, storeId }).session(session);
 
         if (!order) {
             await session.abortTransaction();
@@ -283,11 +400,7 @@ async function deleteOrder(req, res) {
         }
 
         for (const item of order.items) {
-            await Product.findByIdAndUpdate(
-                item.productId,
-                { $inc: { stockQty: item.qty } },
-                { session },
-            );
+            await incrementInventory(order.storeId, item.productId, item.qty);
         }
 
         order.status = "cancelled";

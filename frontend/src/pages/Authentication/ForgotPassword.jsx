@@ -4,6 +4,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link } from 'react-router-dom';
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 import { LuUser } from "react-icons/lu";
+import Input from "../../components/UI/Input";
 
 function ForgotPassword() {
     const [user, setUser] = useState({ email: "" });
@@ -32,14 +33,15 @@ function ForgotPassword() {
                 <form onSubmit={handleForm}>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="email">Email Address<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type="email"
                             name='email'
                             onChange={handleChange}
                             autoComplete="email"
                             value={user.email}
                             id='email'
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500"><HiOutlineMail /></span>
                     </div>
 

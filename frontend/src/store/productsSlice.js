@@ -5,9 +5,15 @@ const api = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const fetchProducts = createAsyncThunk(
     "products/fetchProducts",
-    async (_, { rejectWithValue }) => {
+    async (_, { rejectWithValue, getState }) => {
         try {
-            const res = await axios.get(`${api}/product`);
+            const storeId =
+                getState().stores?.selectedStoreId ||
+                localStorage.getItem("pos_store_id") ||
+                "";
+            const res = await axios.get(
+                `${api}/product${storeId ? `?storeId=${storeId}` : ""}`,
+            );
             return res.data.data.products;
         } catch (err) {
             return rejectWithValue(

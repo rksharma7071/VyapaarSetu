@@ -9,25 +9,26 @@ import {
     handleGetPermissionUsingId,
     handleAllPermission,
 } from "../controllers/user.controller.js";
+import authMiddleware from "../middlewares/authentication.js";
 
 const router = express.Router();
 
-router.route("/").get(handleGetAllUsers).post(handleCreateNewUser);
+router.route("/").get(authMiddleware, handleGetAllUsers).post(authMiddleware, handleCreateNewUser);
 
 router
     .route("/permission")
-    .get(handleAllPermission)
-    .post(handleUpdatePermission);
+    .get(authMiddleware, handleAllPermission)
+    .post(authMiddleware, handleUpdatePermission);
 
 router
     .route("/permission/:id")
-    .get(handleGetPermissionUsingId)
-    .patch(handleUpdatePermission);
+    .get(authMiddleware, handleGetPermissionUsingId)
+    .patch(authMiddleware, handleUpdatePermission);
 
 router
     .route("/:id")
-    .get(handleGetUserUinsgId)
-    .patch(handleUpdateUserUsingId)
-    .delete(handleDeleteUserUsingId);
+    .get(authMiddleware, handleGetUserUinsgId)
+    .patch(authMiddleware, handleUpdateUserUsingId)
+    .delete(authMiddleware, handleDeleteUserUsingId);
 
 export default router;

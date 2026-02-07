@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchOrders, setPaymentFilter, setStatusFilter } from "../store/ordersSlice";
 import Loading from "../components/Loading";
+import Input from "../components/UI/Input";
 
 function Order() {
     const navigate = useNavigate();
@@ -102,7 +103,7 @@ function Order() {
 
     if (error) {
         return (
-            <div className='bg-gray-50 px-8 py-6 space-y-6'>
+            <div className='bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto'>
                 <div className='flex justify-between items-center'>
                     <div className='text-xl font-semibold text-gray-900'>Orders</div>
                 </div>
@@ -121,7 +122,7 @@ function Order() {
         );
     }
     return (
-        <div className="bg-gray-50 px-8 py-6 space-y-6">
+        <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
             <div className='flex justify-between items-center'>
                 <div className='text-xl font-semibold text-gray-900'>Orders</div>
                 {/* <div className='flex gap-3 items-center font-semibold text-gray-900'>
@@ -141,11 +142,11 @@ function Order() {
                         <span className="absolute left-3 text-gray-500">
                             <IoSearch className="text-lg" />
                         </span>
-                        <input
+                        <Input
                             placeholder="Search…"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-5 text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                            className="pl-10 pr-5"
                         />
                     </div>
                     <div className='flex items-center gap-3'>

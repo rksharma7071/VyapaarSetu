@@ -11,6 +11,11 @@ const orderItemSchema = new mongoose.Schema(
         qty: { type: Number, required: true, min: 1 },
         unitPrice: { type: Number, required: true, min: 0 },
         totalPrice: { type: Number, required: true, min: 0 },
+        hsn: { type: String },
+        gstRate: { type: Number, default: 0 },
+        cgst: { type: Number, default: 0 },
+        sgst: { type: Number, default: 0 },
+        igst: { type: Number, default: 0 },
     },
     { _id: false },
 );
@@ -23,11 +28,25 @@ const orderSchema = new mongoose.Schema(
             unique: true,
             index: true,
         },
+        storeId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Store",
+            required: true,
+            index: true,
+        },
         customerId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Customer",
             required: false,
             index: true,
+        },
+        customer: {
+            name: { type: String },
+            phone: { type: String },
+            email: { type: String },
+            gstin: { type: String },
+            address: { type: String },
+            state: { type: String },
         },
         items: {
             type: [orderItemSchema],
@@ -42,9 +61,12 @@ const orderSchema = new mongoose.Schema(
         tax: { type: Number, default: 0, min: 0 },
         discount: { type: Number, default: 0, min: 0 },
         total: { type: Number, required: true, min: 0 },
+        cgstTotal: { type: Number, default: 0, min: 0 },
+        sgstTotal: { type: Number, default: 0, min: 0 },
+        igstTotal: { type: Number, default: 0, min: 0 },
         paymentMethod: {
             type: String,
-            enum: ["cash", "upi", "card"],
+            enum: ["cash", "upi", "card", "razorpay"],
             required: true,
         },
         paymentStatus: {
@@ -52,6 +74,7 @@ const orderSchema = new mongoose.Schema(
             enum: ["paid", "unpaid"],
             default: "paid",
         },
+        paymentId: { type: String },
         status: {
             type: String,
             enum: ["completed", "cancelled", "refunded"],

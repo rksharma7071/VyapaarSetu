@@ -1,13 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { HiOutlineMail } from "react-icons/hi";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 import { LuUser } from "react-icons/lu";
 import axios from 'axios';
+import Input from "../../components/UI/Input";
 
 function Register() {
-    const [register, setRegister] = useState({ name: "", email: "", password: "", confirmpassword: "" });
+    const navigate = useNavigate();
+    const [register, setRegister] = useState({
+        name: "",
+        email: "",
+        password: "",
+        confirmpassword: "",
+    });
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -47,9 +54,16 @@ function Register() {
                 email,
                 password,
                 name,
-            }
+                role: "admin",
+            };
 
-            const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/signup`, payload)
+            const { data } = await axios.post(
+                `${import.meta.env.VITE_API_URL}/auth/signup`,
+                payload,
+            );
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            axios.defaults.headers.common.Authorization = `Bearer ${data.token}`;
             if (remember) {
                 localStorage.setItem("register", JSON.stringify(register));
             }
@@ -59,7 +73,7 @@ function Register() {
 
             console.log("Signup Success: ", data);
 
-            window.location.href = "/";
+            navigate("/store-setup");
         } catch (error) {
             const message = `Signup Error: ${error.response?.data?.message}` || "Registration failed";
             console.error("Signup Error: ", message);
@@ -70,6 +84,15 @@ function Register() {
 
 
     }
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        if (!token || !user) return;
+        if (!user.storeId) return navigate("/store-setup");
+        if (!user.subscriptionActive) return navigate("/pricing");
+        return navigate("/");
+    }, [navigate]);
 
     return (
         <div
@@ -85,52 +108,56 @@ function Register() {
                 <form onSubmit={handleForm}>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="name">Name<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type="text"
                             name='name'
                             onChange={handleChange}
                             autoComplete="name"
                             value={register.name}
                             id='name'
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500"><LuUser /></span>
                     </div>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="email">Email Address<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type="email"
                             name='email'
                             onChange={handleChange}
                             autoComplete="email"
                             value={register.email}
                             id='email'
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500"><HiOutlineMail /></span>
                     </div>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="password">Password<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type={`${showPassword === false ? "password" : "text"} `}
                             value={register.password}
                             name="password"
                             onChange={handleChange}
                             id='password'
                             autoComplete="current-password"
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span onClick={handleShowPassword} className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500 cursor-pointer">
                             {showPassword === false ? <FiEye /> : <FiEyeOff />}
                         </span>
                     </div>
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="confirmpassword">Confirm Password<span className='text-red-500 pl-1'>*</span></label>
-                        <input
+                        <Input
                             type={`${showConfirmPassword === false ? "password" : "text"} `}
                             value={register.confirmpassword}
                             name="confirmpassword"
                             onChange={handleChange}
                             id='confirmpassword'
                             autoComplete="current-password"
-                            className='w-full rounded-lg border border-gray-300 bg-white px-3 py-2 pr-14  text-sm text-gray-700 placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none' />
+                            className="pr-14"
+                        />
                         <span onClick={handleShowConfirmPassword} className="absolute right-3 bottom-2 rounded-md px-2 py-1 text-lg font-medium text-gray-500 cursor-pointer">
                             {showConfirmPassword === false ? <FiEye /> : <FiEyeOff />}
                         </span>

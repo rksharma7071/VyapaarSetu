@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { RxDashboard } from "react-icons/rx";
 import { BsBox } from "react-icons/bs";
@@ -8,9 +8,13 @@ import { AiOutlinePercentage, AiOutlineFile } from "react-icons/ai";
 import { FiShoppingCart } from "react-icons/fi";
 import { FaRegUser } from "react-icons/fa6";
 import { PiCaretDoubleLeftBold } from "react-icons/pi";
+import axios from "axios";
+import { API_URL } from "../utils/api";
 
 function SideBar() {
   const location = useLocation();
+  const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "null"), []);
+  const [permission, setPermission] = useState(null);
 
   const [menu, setMenu] = useState(() => {
     const stored = localStorage.getItem("menu");
@@ -21,18 +25,41 @@ function SideBar() {
     localStorage.setItem("menu", JSON.stringify(menu));
   }, [menu]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    if (user?.role === "admin") return setPermission({ admin: true });
+    axios
+      .get(`${API_URL}/user/permission/${user.id}`)
+      .then((res) => setPermission(res.data || {}))
+      .catch(() => setPermission({}));
+  }, [user]);
+
   const menuItems = [
-    { label: "Dashboard", to: "/", icon: RxDashboard },
-    { label: "Products", to: "/products", icon: BsBox },
-    { label: "Orders", to: "/orders", icon: FiShoppingCart },
-    { label: "Sales", to: "/sales", icon: FiShoppingCart },
-    { label: "Invoices", to: "/invoices", icon: AiOutlineFile },
-    { label: "Discount", to: "/discount", icon: AiOutlinePercentage },
-    { label: "Customers", to: "/customers", icon: TbUsersGroup },
-    { label: "Employee", to: "/employee", icon: FaRegUser },
-    { label: "Reports", to: "/reports", icon: AiOutlineFile },
-    { label: "Settings", to: "/settings", icon: IoSettingsOutline },
+    { label: "Dashboard", to: "/", icon: RxDashboard, perm: "readReport" },
+    { label: "Products", to: "/products", icon: BsBox, perm: "readProduct" },
+    { label: "Categories", to: "/category", icon: BsBox, perm: "readProduct" },
+    { label: "Brands", to: "/brands", icon: BsBox, perm: "readProduct" },
+    { label: "Orders", to: "/orders", icon: FiShoppingCart, perm: "readOrder" },
+    { label: "Sales", to: "/sales", icon: FiShoppingCart, perm: "readOrder" },
+    { label: "Invoices", to: "/invoices", icon: AiOutlineFile, perm: "readInvoice" },
+    { label: "Discount", to: "/discount", icon: AiOutlinePercentage, perm: "readDiscount" },
+    { label: "Suppliers", to: "/suppliers", icon: TbUsersGroup, perm: "readSupplier" },
+    { label: "Purchase Orders", to: "/purchase-orders", icon: AiOutlineFile, perm: "readPurchaseOrder" },
+    { label: "Manage Stock", to: "/manage-stock", icon: BsBox, perm: "readInventory" },
+    { label: "Low Stock", to: "/low-stocks", icon: BsBox, perm: "readInventory" },
+    { label: "Expired", to: "/expired-products", icon: BsBox, perm: "readInventory" },
+    { label: "Returns", to: "/returns", icon: FiShoppingCart, perm: "readReturn" },
+    { label: "Customers", to: "/customers", icon: TbUsersGroup, perm: "readCustomer" },
+    { label: "Employee", to: "/employee", icon: FaRegUser, perm: "readUser" },
+    { label: "Reports", to: "/reports", icon: AiOutlineFile, perm: "readReport" },
+    { label: "Settings", to: "/settings", icon: IoSettingsOutline, perm: "readUser" },
   ];
+
+  const canSee = (item) => {
+    if (!permission) return false;
+    if (permission.admin) return true;
+    return permission[item.perm];
+  };
 
   return (
     <aside
@@ -60,7 +87,7 @@ function SideBar() {
 
       {/* MENU */}
       <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-1">
-        {menuItems.map((item) => {
+        {menuItems.filter(canSee).map((item) => {
           const isActive = location.pathname === item.to;
 
           return (

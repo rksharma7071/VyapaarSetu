@@ -6,8 +6,10 @@ import { Payment } from "../models/payment.model.js";
 export async function createRazorpayOrder(req, res) {
     try {
         const { orderId } = req.body;
+        const storeId = req.user?.storeId;
+        if (!storeId) return res.status(403).json({ message: "Store not linked" });
 
-        const order = await Order.findById(orderId);
+        const order = await Order.findOne({ _id: orderId, storeId });
         if (!order) return res.status(404).json({ message: "Order not found" });
 
         const razorpayOrder = await razorpay.orders.create({
@@ -56,11 +58,14 @@ export async function verifyRazorpayPayment(req, res) {
             });
         }
 
-        const order = await Order.findById(orderId);
+        const storeId = req.user?.storeId;
+        if (!storeId) return res.status(403).json({ message: "Store not linked" });
+        const order = await Order.findOne({ _id: orderId, storeId });
         if (!order) return res.status(404).json({ message: "Order not found" });
 
         const payment = await Payment.create({
             orderId: order._id,
+            storeId: order.storeId,
             provider: "razorpay",
             status: "paid",
             amount: order.total,
@@ -70,6 +75,8 @@ export async function verifyRazorpayPayment(req, res) {
 
         // order.status = "fulfilled";
         order.paymentId = razorpay_payment_id;
+        order.paymentStatus = "paid";
+        order.paymentMethod = "razorpay";
         await order.save();
 
         res.json({ success: true, payment });

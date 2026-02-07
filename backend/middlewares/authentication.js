@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { User } from "../models/user.model.js";
 
 const authMiddleware = (req, res, next) => {
     try {
@@ -10,7 +11,16 @@ const authMiddleware = (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
 
-        next();
+        return User.findById(decoded.id)
+            .select("_id role storeId")
+            .then((user) => {
+                if (!user) {
+                    return res.status(401).json({ message: "User not found" });
+                }
+                req.user.storeId = user.storeId || null;
+                req.user.role = user.role;
+                return next();
+            });
     } catch (error) {
         return res.status(401).json({ message: "Invalid or expired token" });
     }

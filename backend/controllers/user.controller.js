@@ -1,13 +1,21 @@
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 import { User, Permission } from "../models/user.model.js";
 
 async function handleGetAllUsers(req, res) {
-    const users = await User.find({});
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access only" });
+    }
+    const storeId = req.user?.storeId;
+    const users = await User.find({ storeId });
     return res.json(users);
 }
 
 async function handleCreateNewUser(req, res) {
     try {
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ message: "Admin access only" });
+        }
         const body = req.body;
 
         if (
@@ -21,10 +29,21 @@ async function handleCreateNewUser(req, res) {
 
         const result = await User.create({
             email: body.email,
-            password: body.password,
+            password: await bcrypt.hash(body.password, 10),
             name: body.name,
-            role: "author",
+            role: body.role || "cashier",
+            storeId: req.user?.storeId || null,
         });
+
+        if (result.role === "staff") {
+            await Permission.create({
+                userId: result._id,
+                readProduct: true,
+                createProduct: true,
+                updateProduct: true,
+                deleteProduct: false,
+            });
+        }
 
         return res
             .status(201)
@@ -36,16 +55,23 @@ async function handleCreateNewUser(req, res) {
 }
 
 async function handleGetUserUinsgId(req, res) {
-    const user = await User.findById(req.params.id);
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access only" });
+    }
+    const storeId = req.user?.storeId;
+    const user = await User.findOne({ _id: req.params.id, storeId });
     return res.json(user);
 }
 
 async function handleUpdateUserUsingId(req, res) {
     try {
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ message: "Admin access only" });
+        }
         const { id } = req.params;
-        const { email, name, role } = req.body;
+        const { email, name, role, storeId } = req.body;
 
-        const user = await User.findById(id);
+        const user = await User.findOne({ _id: id, storeId: req.user?.storeId });
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
@@ -53,6 +79,7 @@ async function handleUpdateUserUsingId(req, res) {
         if (email) user.email = email;
         if (name) user.name = name;
         if (role) user.role = role;
+        if (storeId !== undefined) user.storeId = storeId;
 
         const updatedUser = await user.save();
 
@@ -74,7 +101,10 @@ async function handleUpdateUserUsingId(req, res) {
 }
 
 async function handleDeleteUserUsingId(req, res) {
-    await User.findByIdAndDelete(req.params.id);
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access only" });
+    }
+    await User.findOneAndDelete({ _id: req.params.id, storeId: req.user?.storeId });
     return res.json({
         status: "success",
         message: "User deleted successfully",
@@ -90,12 +120,44 @@ const permissionFields = [
     "updateProduct",
     "deleteProduct",
     "readProduct",
+    "createOrder",
+    "updateOrder",
+    "deleteOrder",
+    "readOrder",
+    "createCustomer",
+    "updateCustomer",
+    "deleteCustomer",
+    "readCustomer",
+    "createInventory",
+    "updateInventory",
+    "deleteInventory",
+    "readInventory",
+    "createDiscount",
+    "updateDiscount",
+    "deleteDiscount",
+    "readDiscount",
+    "createSupplier",
+    "updateSupplier",
+    "deleteSupplier",
+    "readSupplier",
+    "createPurchaseOrder",
+    "updatePurchaseOrder",
+    "deletePurchaseOrder",
+    "readPurchaseOrder",
+    "readReport",
+    "readInvoice",
+    "createReturn",
+    "readReturn",
+    "readPayment",
 ];
 
 const toBool = (v) => v === true || v === "true" || v === 1 || v === "1";
 
 async function handleUpdatePermission(req, res) {
     try {
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ message: "Admin access only" });
+        }
         const body = req.body;
         const userId = body.userId;
 
@@ -113,6 +175,14 @@ async function handleUpdatePermission(req, res) {
                 updateFields[k] = toBool(body[k]);
             }
         });
+        const targetUser = await User.findById(userId).select("role");
+        if (targetUser?.role === "staff") {
+            Object.keys(updateFields).forEach((key) => {
+                if (key.startsWith("delete")) {
+                    updateFields[key] = false;
+                }
+            });
+        }
         const existing = await Permission.findOne({ userId }).lean();
 
         if (existing) {
@@ -158,6 +228,9 @@ async function handleUpdatePermission(req, res) {
 }
 
 async function handleAllPermission(req, res) {
+    if (req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access only" });
+    }
     const permission = await Permission.find({});
     return res.json(permission);
 }
@@ -165,6 +238,9 @@ async function handleAllPermission(req, res) {
 async function handleGetPermissionUsingId(req, res) {
     try {
         const userId = req.params.id;
+        if (req.user?.role !== "admin" && String(req.user?.id) !== String(userId)) {
+            return res.status(403).json({ message: "Admin access only" });
+        }
 
         if (!userId) {
             return res.status(400).json({ message: "User ID is required" });

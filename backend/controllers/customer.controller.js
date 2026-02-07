@@ -3,8 +3,12 @@ import Customer from "../models/customer.model.js";
 
 export const getCustomer = async (req, res) => {
     try {
-        const customers = await Customer.find()
-            .select("_id name phone createdAt")
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
+        const customers = await Customer.find({ storeId })
+            .select("_id name phone email gstin city state createdAt")
             .sort({ createdAt: -1 });
         return res.status(200).json({
             success: true,
@@ -23,8 +27,12 @@ export const getCustomer = async (req, res) => {
 export const getCustomerByID_Mobile = async (req, res) => {
     try {
         const { id } = req.params;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
 
-        let query = { isActive: true };
+        let query = { isActive: true, storeId };
 
         if (mongoose.Types.ObjectId.isValid(id)) {
             query._id = id;
@@ -33,7 +41,7 @@ export const getCustomerByID_Mobile = async (req, res) => {
         }
 
         const customer = await Customer.findOne(query).select(
-            "_id name phone email createdAt",
+            "_id name phone email gstin address city state pincode createdAt",
         );
 
         if (!customer) {
@@ -58,7 +66,12 @@ export const getCustomerByID_Mobile = async (req, res) => {
 
 export const createCustomer = async (req, res) => {
     try {
-        const { name, phone } = req.body;
+        const { name, phone, email, gstin, address, city, state, pincode } =
+            req.body;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
         if (!name || !phone) {
             return res.status(400).json({
                 success: false,
@@ -66,10 +79,16 @@ export const createCustomer = async (req, res) => {
             });
         }
 
-        let customer = await Customer.findOne({ phone, role: "customer" });
+        let customer = await Customer.findOne({ phone, storeId });
 
         if (customer) {
             customer.name = name;
+            customer.email = email ?? customer.email;
+            customer.gstin = gstin ?? customer.gstin;
+            customer.address = address ?? customer.address;
+            customer.city = city ?? customer.city;
+            customer.state = state ?? customer.state;
+            customer.pincode = pincode ?? customer.pincode;
             await customer.save();
 
             return res.status(200).json({
@@ -82,7 +101,13 @@ export const createCustomer = async (req, res) => {
         customer = await Customer.create({
             phone,
             name,
-            role: "customer",
+            email,
+            gstin,
+            address,
+            city,
+            state,
+            pincode,
+            storeId,
         });
 
         return res.status(201).json({
@@ -102,8 +127,12 @@ export const createCustomer = async (req, res) => {
 export const deleteCustomer = async (req, res) => {
     try {
         const { id } = req.params;
+        const storeId = req.user?.storeId;
+        if (!storeId) {
+            return res.status(403).json({ message: "Store not linked" });
+        }
 
-        let query = { isActive: true };
+        let query = { isActive: true, storeId };
 
         if (mongoose.Types.ObjectId.isValid(id)) {
             query._id = id;

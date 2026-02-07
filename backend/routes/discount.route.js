@@ -7,17 +7,22 @@ import {
     getDiscountById,
     updateDiscount,
 } from "../controllers/discount.controller.js";
+import authMiddleware from "../middlewares/authentication.js";
+import authorizePermission from "../middlewares/authorizePermission.js";
 
 const router = express.Router();
 
-router.route("/").get(getAllDiscount).post(createDiscount);
+router
+    .route("/")
+    .get(authMiddleware, authorizePermission("readDiscount"), getAllDiscount)
+    .post(authMiddleware, authorizePermission("createDiscount"), createDiscount);
 
 router
     .route("/:id")
-    .get(getDiscountById)
-    .patch(updateDiscount)
-    .delete(deleteDiscount);
+    .get(authMiddleware, authorizePermission("readDiscount"), getDiscountById)
+    .patch(authMiddleware, authorizePermission("updateDiscount"), updateDiscount)
+    .delete(authMiddleware, authorizePermission("deleteDiscount"), deleteDiscount);
 
-router.post("/apply", applyDiscount);
+router.post("/apply", authMiddleware, authorizePermission("readDiscount"), applyDiscount);
 
 export default router;

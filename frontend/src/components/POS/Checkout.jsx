@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { setPosOrder, clearPosOrder } from "../../store/ordersSlice";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,11 +10,15 @@ import { clearCart } from "../../store/cartSlice";
 function Checkout() {
     const navigate = useNavigate();
     const cart = useSelector((state) => state.cart.items);
+    const storeId = useSelector((state) => state.stores.selectedStoreId);
     const dispatch = useDispatch();
 
     const [customer, setCustomer] = useState({
         name: "",
         phone: "",
+        gstin: "",
+        state: "",
+        address: "",
     });
 
     const [tax, setTax] = useState(5);
@@ -35,6 +39,7 @@ function Checkout() {
         if (!cart.length) return alert("Cart is empty");
         if (!customer.name || !customer.phone)
             return alert("Customer name and phone required");
+        if (!storeId) return alert("Select a store first");
 
         const orderPayload = {
             customer,
@@ -58,38 +63,102 @@ function Checkout() {
 
             dispatch(setPosOrder(orderPayload));
 
-            const customerRes = await axios.post(`${import.meta.env.VITE_API_URL}/customer`, customer);
+            const customerRes = await axios.post(
+                `${import.meta.env.VITE_API_URL}/customer`,
+                customer,
+            );
             const customerId = customerRes.data.data._id;
-            console.log({
+
+            const orderRes = await axios.post(`${import.meta.env.VITE_API_URL}/order`, {
+                storeId,
                 customerId,
+                customer,
                 items: cart.map(item => ({
                     productId: item._id,
                     qty: item.qty,
                 })),
-                tax,
                 discount,
                 paymentMethod,
                 notes,
             });
 
-            await axios.post(`${import.meta.env.VITE_API_URL}/order`, {
-                customerId,
-                items: cart.map(item => ({
-                    productId: item._id,
-                    qty: item.qty,
-                })),
-                tax,
-                discount,
-                paymentMethod,
-                notes,
-            });
+            const createdOrder = orderRes.data.data;
+
+            if (paymentMethod === "razorpay") {
+                const scriptLoaded = await new Promise((resolve) => {
+                    if (window.Razorpay) return resolve(true);
+                    const script = document.createElement("script");
+                    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+                    script.onload = () => resolve(true);
+                    script.onerror = () => resolve(false);
+                    document.body.appendChild(script);
+                });
+
+                if (!scriptLoaded) throw new Error("Razorpay SDK failed");
+
+                const { data } = await axios.post(
+                    `${import.meta.env.VITE_API_URL}/razorpay/create-order`,
+                    { orderId: createdOrder._id },
+                );
+
+                const options = {
+                    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+                    amount: data.razorpayOrder.amount,
+                    currency: "INR",
+                    name: "VyapaarSetu POS",
+                    order_id: data.razorpayOrder.id,
+                    handler: async (response) => {
+                        await axios.post(
+                            `${import.meta.env.VITE_API_URL}/razorpay/verify-payment`,
+                            {
+                                ...response,
+                                orderId: createdOrder._id,
+                            },
+                        );
+                        alert("Payment successful");
+                        dispatch(clearCart());
+                        dispatch(clearPosOrder());
+                        navigate("/pos");
+                    },
+                };
+
+                const rzp = new window.Razorpay(options);
+                rzp.open();
+                return;
+            }
 
             alert("Order created successfully");
             dispatch(clearCart());
             dispatch(clearPosOrder());
             navigate("/pos");
         } catch (err) {
-            alert(err.response?.data?.message || "Checkout failed");
+            if (!navigator.onLine) {
+                const pending = JSON.parse(
+                    localStorage.getItem("pos_offline_orders") || "[]",
+                );
+                pending.push({
+                    storeId,
+                    customer,
+                    items: cart.map(item => ({
+                        productId: item._id,
+                        qty: item.qty,
+                    })),
+                    discount,
+                    paymentMethod,
+                    notes,
+                    createdAt: new Date().toISOString(),
+                });
+                localStorage.setItem(
+                    "pos_offline_orders",
+                    JSON.stringify(pending),
+                );
+                alert("Order saved offline. It will sync when online.");
+                dispatch(clearCart());
+                dispatch(clearPosOrder());
+                navigate("/pos");
+            } else {
+                alert(err.response?.data?.message || "Checkout failed");
+            }
         } finally {
             setLoading(false);
         }
@@ -105,6 +174,11 @@ function Checkout() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Input name="name" value={customer.name} placeholder="Customer Name" onChange={(e) => setCustomer({ ...customer, name: e.target.value })} />
                     <Input type="tel" name="phone" value={customer.phone} placeholder="Phone Number" onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} />
+                    <Input name="gstin" value={customer.gstin} placeholder="GSTIN (optional)" onChange={(e) => setCustomer({ ...customer, gstin: e.target.value })} />
+                    <Input name="state" value={customer.state} placeholder="State (for GST)" onChange={(e) => setCustomer({ ...customer, state: e.target.value })} />
+                </div>
+                <div className="mt-3">
+                    <Textarea placeholder="Address (optional)" onChange={(e) => setCustomer({ ...customer, address: e.target.value })} value={customer.address} />
                 </div>
             </div>
 
@@ -153,6 +227,7 @@ function Checkout() {
                     <option value="cash">Cash</option>
                     <option value="card">Card</option>
                     <option value="upi">UPI</option>
+                    <option value="razorpay">Razorpay</option>
                 </select>
                 <Textarea placeholder="Notes (optional)" onChange={(e) => setNotes(e.target.value)} value={notes} />
             </div>

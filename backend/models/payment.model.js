@@ -6,13 +6,18 @@ const paymentSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: "Order",
             required: true,
-            unique: true,
+        },
+        storeId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Store",
+            required: true,
+            index: true,
         },
 
         provider: {
             type: String,
             required: true,
-            enum: ["stripe", "paypal", "razorpay", "shopify_payments"],
+            enum: ["cash", "card", "upi", "razorpay"],
         },
 
         status: {
@@ -31,7 +36,6 @@ const paymentSchema = new mongoose.Schema(
             type: String,
             unique: true,
             sparse: true,
-            required: true,
         },
 
         currency: {

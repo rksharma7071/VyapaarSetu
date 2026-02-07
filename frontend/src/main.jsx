@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import axios from "axios";
 
 import "./index.css";
 import App from "./App.jsx";
@@ -27,6 +28,9 @@ import Reports from "./pages/Reports.jsx";
 import Settings from "./pages/Settings.jsx";
 import Order from "./pages/Order.jsx";
 import OrderById from "./pages/OrderById.jsx";
+import Suppliers from "./pages/Suppliers.jsx";
+import PurchaseOrders from "./pages/PurchaseOrders.jsx";
+import Returns from "./pages/Returns.jsx";
 
 // Auth
 import Login from "./pages/Authentication/Login.jsx";
@@ -41,15 +45,21 @@ import Verification from "./pages/Authentication/Verification.jsx";
 import POS from "./pages/POS.jsx";
 import Checkout from "./components/POS/Checkout.jsx";
 import Main from "./components/POS/Main.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Pricing from "./pages/Pricing.jsx";
+import StoreSetup from "./pages/StoreSetup.jsx";
 
 // Loaders
 import { getProductBySlug } from "./data/product.js";
 
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <App />,
+    element: <ProtectedRoute />,
     children: [
+      {
+        path: "/",
+        element: <App />,
+        children: [
       { index: true, element: <Dashboard /> },
 
       { path: "products", element: <Products /> },
@@ -74,23 +84,29 @@ const router = createBrowserRouter([
       { path: "sales", element: <Sales /> },
       { path: "invoices", element: <Invoices /> },
       { path: "discount", element: <Discount /> },
+      { path: "suppliers", element: <Suppliers /> },
+      { path: "purchase-orders", element: <PurchaseOrders /> },
+      { path: "returns", element: <Returns /> },
       { path: "customers", element: <Customers /> },
       { path: "employee", element: <Employee /> },
       { path: "reports", element: <Reports /> },
       { path: "settings", element: <Settings /> },
-    ],
-  },
-
-  {
-    path: "/pos",
-    element: <Main />,
-    children: [
-      { index: true, element: <POS /> },
-      { path: "checkout", element: <Checkout /> },
+        ],
+      },
+      {
+        path: "/pos",
+        element: <Main />,
+        children: [
+          { index: true, element: <POS /> },
+          { path: "checkout", element: <Checkout /> },
+        ],
+      },
     ],
   },
 
   { path: "/login", element: <Login /> },
+  { path: "/store-setup", element: <StoreSetup /> },
+  { path: "/pricing", element: <Pricing /> },
   { path: "/register", element: <Register /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
   { path: "/email-verification", element: <EmailVerification /> },
@@ -106,3 +122,7 @@ createRoot(document.getElementById("root")).render(
     </Provider>
   </StrictMode >
 );
+const token = localStorage.getItem("token");
+if (token) {
+  axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+}

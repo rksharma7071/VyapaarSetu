@@ -33,7 +33,7 @@ function OrderById() {
     if (!selectedOrder) return null;
 
     return (
-        <div className="bg-gray-50 px-8 py-6 space-y-6">
+        <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <button

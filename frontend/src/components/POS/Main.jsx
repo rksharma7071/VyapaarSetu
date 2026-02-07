@@ -5,21 +5,71 @@ import Header from "./Header";
 import Cart from "./Cart";
 import Loading from "../Loading";
 import { fetchProducts } from "../../store/productsSlice";
+import { fetchStores } from "../../store/storeSlice";
 import {
     addToCart,
     increaseQty,
     decreaseQty,
 } from "../../store/cartSlice";
+import axios from "axios";
 
 function Main() {
     const dispatch = useDispatch();
     const { loading, error } = useSelector((state) => state.products);
+    const selectedStoreId = useSelector(
+        (state) => state.stores.selectedStoreId,
+    );
 
     const cart = useSelector((state) => state.cart.items);
 
     useEffect(() => {
-        dispatch(fetchProducts());
+        dispatch(fetchStores());
     }, [dispatch]);
+
+    useEffect(() => {
+        dispatch(fetchProducts());
+    }, [dispatch, selectedStoreId]);
+
+    useEffect(() => {
+        const syncOfflineOrders = async () => {
+            const pending = JSON.parse(
+                localStorage.getItem("pos_offline_orders") || "[]",
+            );
+            if (!pending.length || !navigator.onLine) return;
+
+            const remaining = [];
+            for (const order of pending) {
+                try {
+                    const customerRes = await axios.post(
+                        `${import.meta.env.VITE_API_URL}/customer`,
+                        order.customer,
+                    );
+                    const customerId = customerRes.data.data._id;
+                    await axios.post(`${import.meta.env.VITE_API_URL}/order`, {
+                        storeId: order.storeId,
+                        customerId,
+                        customer: order.customer,
+                        items: order.items,
+                        discount: order.discount,
+                        paymentMethod: order.paymentMethod,
+                        notes: order.notes,
+                    });
+                } catch (err) {
+                    remaining.push(order);
+                }
+            }
+            localStorage.setItem(
+                "pos_offline_orders",
+                JSON.stringify(remaining),
+            );
+        };
+
+        const handleOnline = () => syncOfflineOrders();
+        window.addEventListener("online", handleOnline);
+        syncOfflineOrders();
+
+        return () => window.removeEventListener("online", handleOnline);
+    }, []);
 
     const subtotal = useMemo(() => {
         return cart.reduce((sum, item) => sum + item.price * item.qty, 0);

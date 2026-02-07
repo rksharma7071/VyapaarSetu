@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from "react";
 import { FiDownload } from "react-icons/fi";
 import { FiPlusCircle } from "react-icons/fi";
 import { IoSearch } from 'react-icons/io5';
@@ -6,13 +6,16 @@ import { FaChevronDown } from "react-icons/fa";
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from "react-icons/fa6";
 import { GoChevronDown } from 'react-icons/go';
-import axios from 'axios';
-import Input from '../components/UI/Input';
-import Textarea from '../components/UI/Textarea';
+import Input from "../components/UI/Input";
+import Textarea from "../components/UI/Textarea";
+import { useSelector } from "react-redux";
+import axios from "axios";
 
 function CreateProducts() {
     const navigate = useNavigate();
+    const storeId = useSelector((state) => state.stores.selectedStoreId);
 
+    const [slugEdited, setSlugEdited] = useState(false);
     const [product, setProduct] = useState({
         name: "",
         slug: "",
@@ -21,16 +24,41 @@ function CreateProducts() {
         price: "",
         sku: "",
         taxRate: "",
+        gstRate: "",
+        hsn: "",
         stockQty: "",
         unit: "",
         isActive: true,
     });
+    const [categories, setCategories] = useState([]);
 
     const [image, setImage] = useState(null);
 
+    useEffect(() => {
+        if (!storeId) return;
+        axios
+            .get(`${import.meta.env.VITE_API_URL}/category`)
+            .then((res) => setCategories(res.data?.data || []))
+            .catch(() => setCategories([]));
+    }, [storeId]);
+
+    const toSlug = (value) =>
+        String(value || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-");
+
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setProduct(prev => ({ ...prev, [name]: value }));
+        setProduct(prev => {
+            const next = { ...prev, [name]: value };
+            if (name === "name" && !slugEdited) {
+                next.slug = toSlug(value);
+            }
+            return next;
+        });
     };
 
     const handleFileChange = (e) => {
@@ -45,6 +73,9 @@ function CreateProducts() {
         Object.entries(product).forEach(([key, value]) => {
             formData.append(key, value);
         });
+        if (storeId) {
+            formData.append("storeId", storeId);
+        }
 
         if (image) {
             formData.append("image", image);
@@ -62,21 +93,21 @@ function CreateProducts() {
     };
 
     return (
-        <div className=' bg-gray-50 px-8 py-6 space-y-6'>
+        <div className=' bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto'>
             <div className='flex justify-between items-center'>
                 <div className='text-xl font-semibold text-gray-900'>Create Product</div>
                 <div className='flex gap-3 items-center font-semibold text-gray-900'>
                     <button
                         onClick={() => navigate("/products")}
-                        className="flex justify-between items-center gap-2 w-42 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30"
+                        className="flex justify-between items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30"
                         type='submit'
                     >
-                        <FaArrowLeft className='text-lg' />Back to Products
+                        <FaArrowLeft className='text-lg' />
                     </button>
                 </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-white p-8">
+            <div className="rounded-xl border border-gray-200 bg-white p-8 overflow-y-auto">
                 <form onSubmit={handleForm} className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Product Name <span className="text-red-500">*</span></label>
@@ -84,7 +115,14 @@ function CreateProducts() {
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Slug <span className="text-red-500">*</span></label>
-                        <Input name="slug" value={product.slug} onChange={handleChange} />
+                        <Input
+                            name="slug"
+                            value={product.slug}
+                            onChange={(e) => {
+                                setSlugEdited(true);
+                                handleChange(e);
+                            }}
+                        />
                     </div>
 
                     <div className="md:col-span-2">
@@ -94,7 +132,18 @@ function CreateProducts() {
 
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Category <span className="text-red-500">*</span></label>
-                        <Input name="category" value={product.category} onChange={handleChange} />
+                        <Input
+                            name="category"
+                            value={product.category}
+                            onChange={handleChange}
+                            placeholder="Type category name"
+                            list="category-options"
+                        />
+                        <datalist id="category-options">
+                            {categories.map((c) => (
+                                <option key={c._id} value={c.name} />
+                            ))}
+                        </datalist>
 
                     </div>
                     <div>
@@ -115,6 +164,14 @@ function CreateProducts() {
                             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         /> */}
                         <Input name="taxRate" value={product.taxRate} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">GST Rate (%)</label>
+                        <Input name="gstRate" value={product.gstRate} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">HSN Code</label>
+                        <Input name="hsn" value={product.hsn} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Stock Quantity <span className="text-red-500">*</span></label>

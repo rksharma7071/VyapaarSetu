@@ -5,9 +5,14 @@ const discountSchema = new mongoose.Schema(
         discount_code: {
             type: String,
             required: true,
-            unique: true,
             uppercase: true,
             trim: true,
+            index: true,
+        },
+        storeId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Store",
+            required: true,
             index: true,
         },
 
@@ -30,6 +35,8 @@ const discountSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+discountSchema.index({ storeId: 1, discount_code: 1 }, { unique: true });
 
 const Discount = mongoose.model("Discount", discountSchema);
 

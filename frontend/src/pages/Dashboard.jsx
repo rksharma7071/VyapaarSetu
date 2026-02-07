@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FaAngleUp, FaArrowUpRightDots } from "react-icons/fa6";
 import { GiTakeMyMoney } from "react-icons/gi";
+import axios from "axios";
+import { useSelector } from "react-redux";
+import { API_URL } from "../utils/api";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -24,27 +27,63 @@ ChartJS.register(
 );
 
 function Dashboard() {
+    const storeId = useSelector((state) => state.stores.selectedStoreId);
+    const [summary, setSummary] = useState({
+        totalSales: 0,
+        totalOrders: 0,
+        totalTax: 0,
+        totalDiscount: 0,
+    });
+    const [orders, setOrders] = useState([]);
+    const [store, setStore] = useState(null);
+
+    useEffect(() => {
+        if (!storeId) return;
+        const load = async () => {
+            const [reportRes, orderRes, storeRes] = await Promise.all([
+                axios.get(`${API_URL}/report/sales-summary?storeId=${storeId}`),
+                axios.get(`${API_URL}/order?storeId=${storeId}`),
+                axios.get(`${API_URL}/store/${storeId}`),
+            ]);
+            setSummary(reportRes.data.data.summary);
+            setOrders(orderRes.data.data || orderRes.data);
+            setStore(storeRes.data.data);
+        };
+        load();
+    }, [storeId]);
+
+    const { labels, series } = useMemo(() => {
+        const days = 30;
+        const labelsArr = [];
+        const totals = new Array(days).fill(0);
+        const today = new Date();
+        for (let i = days - 1; i >= 0; i -= 1) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            labelsArr.push(
+                d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+            );
+        }
+        orders.forEach((o) => {
+            const d = new Date(o.createdAt);
+            const diff = Math.floor((today - d) / 86400000);
+            const idx = days - 1 - diff;
+            if (idx >= 0 && idx < days) {
+                totals[idx] += Number(o.total || 0);
+            }
+        });
+        return { labels: labelsArr, series: totals };
+    }, [orders]);
+
     const data = {
-        labels: [
-            "01", "02", "03", "04", "05", "06", "07",
-            "08", "09", "10", "11", "12", "13", "14",
-            "15", "16", "17", "18", "19", "20", "21",
-            "22", "23", "24", "25", "26", "27", "28",
-            "29", "30"
-        ],
+        labels,
         datasets: [
             {
-                label: "Net Sales ($)",
-                data: [
-                    120, 165, 210, 185, 240, 310, 270,
-                    290, 345, 410, 360, 395, 430, 480,
-                    450, 520, 495, 560, 530, 610, 580,
-                    650, 620, 690, 640, 710, 680, 750,
-                    720, 820
-                ],
-                borderColor: "#6366f1",
-                backgroundColor: "rgba(99,102,241,0.15)",
-                tension: 0,
+                label: "Sales (₹)",
+                data: series,
+                borderColor: "#0ea5e9",
+                backgroundColor: "rgba(14,165,233,0.15)",
+                tension: 0.35,
                 fill: true,
             },
         ],
@@ -83,7 +122,7 @@ function Dashboard() {
                 displayColors: false,
                 callbacks: {
                     label: (context) =>
-                        `$${context.parsed.y.toLocaleString()}`,
+                        `₹${context.parsed.y.toLocaleString()}`,
                 },
             },
         },
@@ -112,7 +151,10 @@ function Dashboard() {
                     font: {
                         size: 12,
                     },
-                    callback: (value) => `$${value / 1000}k`,
+                    callback: (value) =>
+                        value >= 1000
+                            ? `₹${value / 1000}k`
+                            : `₹${value}`,
                 },
             },
         },
@@ -121,60 +163,61 @@ function Dashboard() {
     return (
         <main className="flex-1 overflow-y-auto bg-gray-50 px-4 py-4 sm:px-8 sm:py-6 custom-scrollbar">
             <div className="space-y-6">
-                <div className="rounded-lg border border-gray-200 bg-white p-5">
-                    <span className="font-semibold text-gray-900">
-                        Hi John Smilga,
-                    </span>{" "}
-                    here’s what’s happening with your store today.
+                <div className="rounded-xl border border-gray-200 bg-white p-6">
+                    <div className="text-sm text-gray-500">Store</div>
+                    <div className="text-xl font-semibold text-gray-900">
+                        {store?.name || "Select a store"}
+                    </div>
+                    <div className="text-sm text-gray-500 mt-1">
+                        {store?.city || ""} {store?.state ? `• ${store.state}` : ""}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-8">
-                    <div className="col-span-1 flex justify-between rounded-lg border border-gray-200 bg-white p-6 sm:col-span-2 lg:col-span-4">
-                        <div>
-                            <p className="text-sm text-gray-500">Weekly Earnings</p>
-                            <h2 className="text-3xl font-bold text-gray-900 mt-2">
-                                $95,000.45
-                            </h2>
-                            <div className="flex items-center gap-2 mt-3 text-sm">
-                                <FaAngleUp className="text-green-500" />
-                                <span className="text-green-600 font-semibold">48%</span>
-                                <span className="text-gray-500">
-                                    increase from last week
-                                </span>
-                            </div>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-xl border border-gray-200 bg-white p-6">
+                        <p className="text-sm text-gray-500">Total Sales</p>
+                        <h2 className="text-2xl font-bold text-gray-900 mt-2">
+                            ₹{summary.totalSales?.toLocaleString() || 0}
+                        </h2>
+                        <div className="flex items-center gap-2 mt-3 text-sm">
+                            <FaAngleUp className="text-green-500" />
+                            <span className="text-green-600 font-semibold">Live</span>
+                            <span className="text-gray-500">updated today</span>
                         </div>
-                        <img src="earning.png" alt="Earning" className="h-20" />
                     </div>
 
-                    <div className="col-span-1 rounded-lg bg-indigo-600 p-6 text-white lg:col-span-2">
-                        <FaArrowUpRightDots className="text-3xl mb-4 opacity-80" />
-                        <h2 className="text-3xl font-bold">10,000+</h2>
-                        <p className="text-sm opacity-80 mt-1">Total Sales</p>
+                    <div className="rounded-xl border border-gray-200 bg-white p-6">
+                        <FaArrowUpRightDots className="text-3xl mb-2 text-sky-600" />
+                        <h2 className="text-2xl font-bold">{summary.totalOrders}</h2>
+                        <p className="text-sm text-gray-500 mt-1">Orders</p>
                     </div>
 
-                    <div className="col-span-1 rounded-lg bg-emerald-600 p-6 text-white lg:col-span-2">
-                        <GiTakeMyMoney className="text-3xl mb-4 opacity-80" />
-                        <h2 className="text-3xl font-bold">800+</h2>
-                        <p className="text-sm opacity-80 mt-1">
-                            Purchased Goods
-                        </p>
+                    <div className="rounded-xl border border-gray-200 bg-white p-6">
+                        <GiTakeMyMoney className="text-3xl mb-2 text-emerald-600" />
+                        <h2 className="text-2xl font-bold">₹{summary.totalTax}</h2>
+                        <p className="text-sm text-gray-500 mt-1">Tax Collected</p>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-200 bg-white p-6">
+                        <p className="text-sm text-gray-500">Discount Given</p>
+                        <h2 className="text-2xl font-bold">₹{summary.totalDiscount}</h2>
+                        <p className="text-sm text-gray-500 mt-1">Total Discount</p>
                     </div>
                 </div>
 
-                <div className="rounded-lg border border-gray-200 bg-white p-6">
+                <div className="rounded-xl border border-gray-200 bg-white p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-semibold text-gray-800">
-                            Sales Analytics
+                            Sales & Earnings (Last 30 Days)
                         </h3>
                         <span className="text-sm text-gray-500">
-                            Last 7 Months
+                            Updated in real-time
                         </span>
                     </div>
                     <div className="h-80">
                         <Line options={options} data={data} />
                     </div>
                 </div>
-
             </div>
         </main>
     );

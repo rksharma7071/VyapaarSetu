@@ -1,9 +1,57 @@
-import React from 'react'
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { useSelector } from "react-redux";
+import { API_URL } from "../utils/api";
 
 function ExpiredProducts() {
+    const storeId = useSelector((state) => state.stores.selectedStoreId);
+    const [items, setItems] = useState([]);
+
+    useEffect(() => {
+        if (!storeId) return;
+        axios
+            .get(`${API_URL}/inventory/expired?storeId=${storeId}`)
+            .then((res) => setItems(res.data.data || []));
+    }, [storeId]);
+
     return (
-        <div>Expired Products</div>
-    )
+        <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
+            <div className="text-xl font-semibold text-gray-900">Expired Products</div>
+            <div className="rounded-lg border border-gray-200 bg-white">
+                <table className="w-full text-sm">
+                    <thead className="bg-gray-100">
+                        <tr>
+                            <th className="text-left px-4 py-3">Product</th>
+                            <th className="text-left px-4 py-3">Batch</th>
+                            <th className="text-left px-4 py-3">Expiry</th>
+                            <th className="text-left px-4 py-3">Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {items.map((b) => (
+                            <tr key={b._id} className="border-t border-gray-300">
+                                <td className="px-4 py-3">{b.productId?.name}</td>
+                                <td className="px-4 py-3">{b.batchNo}</td>
+                                <td className="px-4 py-3">
+                                    {b.expiryDate
+                                        ? new Date(b.expiryDate).toLocaleDateString()
+                                        : "-"}
+                                </td>
+                                <td className="px-4 py-3">{b.qty}</td>
+                            </tr>
+                        ))}
+                        {!items.length && (
+                            <tr>
+                                <td className="px-4 py-6 text-gray-500" colSpan={4}>
+                                    No expired batches
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
 }
 
-export default ExpiredProducts
+export default ExpiredProducts;

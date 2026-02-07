@@ -6,6 +6,7 @@ import {
     increaseQty,
     decreaseQty,
 } from "../store/cartSlice.js";
+import Input from "../components/UI/Input";
 function POS() {
     const dispatch = useDispatch();
 
@@ -13,6 +14,7 @@ function POS() {
     // const { addToCart, setCart } = useOutletContext();
 
     const [activeCategory, setActiveCategory] = useState("All");
+    const [scanValue, setScanValue] = useState("");
 
     const categories = useMemo(() => {
         const unique = new Set(products.map((p) => p.category));
@@ -24,8 +26,39 @@ function POS() {
         return products.filter((p) => p.category === activeCategory);
     }, [products, activeCategory]);
 
+    const handleScan = (e) => {
+        if (e.key !== "Enter") return;
+        const value = scanValue.trim().toLowerCase();
+        if (!value) return;
+        const match = products.find(
+            (p) =>
+                p.sku?.toLowerCase() === value ||
+                p.slug?.toLowerCase() === value ||
+                p.name?.toLowerCase().includes(value),
+        );
+        if (match) {
+            dispatch(addToCart(match));
+        } else {
+            alert("Product not found");
+        }
+        setScanValue("");
+    };
+
     return (
         <>
+            <div className="shrink-0 rounded-xl border border-gray-300 bg-white p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="font-semibold">Scanner / Keyboard</h2>
+                    <Input
+                        value={scanValue}
+                        onChange={(e) => setScanValue(e.target.value)}
+                        onKeyDown={handleScan}
+                        placeholder="Scan barcode / type SKU and press Enter"
+                        className="w-full sm:w-96"
+                    />
+                </div>
+            </div>
+
             <div className="shrink-0 rounded-xl border border-gray-300 bg-white p-4">
                 <h2 className="mb-3 font-semibold">Categories</h2>
 
