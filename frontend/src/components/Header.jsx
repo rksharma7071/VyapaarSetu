@@ -29,6 +29,17 @@ function Header() {
     );
     const [permission, setPermission] = useState(null);
     const selectedStore = stores.find((s) => s._id === selectedStoreId);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("pos_store_id");
+        if (axios?.defaults?.headers?.common?.Authorization) {
+            delete axios.defaults.headers.common.Authorization;
+        }
+        window.location.href = "/login";
+    };
 
     useEffect(() => {
         dispatch(fetchStores());
@@ -60,6 +71,7 @@ function Header() {
         { label: "Returns", to: "/returns", icon: FiShoppingCart, perm: "readReturn" },
         { label: "Customers", to: "/customers", icon: TbUsersGroup, perm: "readCustomer" },
         { label: "Employee", to: "/employee", icon: FaRegUser, perm: "readUser" },
+        { label: "Role Permissions", to: "/role-permissions", icon: FaRegUser, perm: "admin" },
         { label: "Reports", to: "/reports", icon: AiOutlineFile, perm: "readReport" },
         { label: "Settings", to: "/settings", icon: IoSettingsOutline, perm: "readUser" },
     ];
@@ -67,6 +79,7 @@ function Header() {
     const canSee = (item) => {
         if (!permission) return false;
         if (permission.admin) return true;
+        if (item.perm === "admin") return false;
         return permission[item.perm];
     };
 
@@ -92,7 +105,7 @@ function Header() {
                         onChange={(e) =>
                             dispatch(setSelectedStore(e.target.value))
                         }
-                        className="hidden sm:block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                        className="hidden sm:block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     >
                         {stores.map((store) => (
                             <option key={store._id} value={store._id}>
@@ -102,18 +115,51 @@ function Header() {
                     </select>
                     <button onClick={handleRefresh} className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-white"><TbReload />Refresh</button>
                     <Link to="/pos" className="hidden sm:flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm text-white"><FaLaptop />POS</Link>
-                    <div className="hidden sm:flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-1.5">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold">
-                            {user?.name?.[0] || "U"}
-                        </div>
-                        <div className="leading-tight">
-                            <div className="text-sm font-semibold text-gray-900">
-                                {user?.name || "User"}
+                    <div className="relative hidden sm:flex">
+                        <button
+                            onClick={() => setUserMenuOpen((v) => !v)}
+                            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-1.5"
+                        >
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold">
+                                {user?.name?.[0] || "U"}
                             </div>
-                            <div className="text-xs text-gray-500">
-                                {selectedStore?.name || "No Store"}
+                            <div className="leading-tight text-left">
+                                <div className="text-sm font-semibold text-gray-900">
+                                    {user?.name || "User"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {selectedStore?.name || "No Store"}
+                                </div>
                             </div>
-                        </div>
+                        </button>
+                        {userMenuOpen && (
+                            <div className="absolute right-0 top-12 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
+                                <Link
+                                    to="/"
+                                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                                >
+                                    Dashboard
+                                </Link>
+                                <Link
+                                    to="/pos"
+                                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                                >
+                                    POS
+                                </Link>
+                                <Link
+                                    to="/settings"
+                                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                                >
+                                    Settings
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             

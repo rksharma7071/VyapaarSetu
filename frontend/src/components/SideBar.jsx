@@ -51,6 +51,7 @@ function SideBar() {
     { label: "Returns", to: "/returns", icon: FiShoppingCart, perm: "readReturn" },
     { label: "Customers", to: "/customers", icon: TbUsersGroup, perm: "readCustomer" },
     { label: "Employee", to: "/employee", icon: FaRegUser, perm: "readUser" },
+    { label: "Role Permissions", to: "/role-permissions", icon: FaRegUser, perm: "admin" },
     { label: "Reports", to: "/reports", icon: AiOutlineFile, perm: "readReport" },
     { label: "Settings", to: "/settings", icon: IoSettingsOutline, perm: "readUser" },
   ];
@@ -58,6 +59,7 @@ function SideBar() {
   const canSee = (item) => {
     if (!permission) return false;
     if (permission.admin) return true;
+    if (item.perm === "admin") return false;
     return permission[item.perm];
   };
 

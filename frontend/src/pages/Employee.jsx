@@ -11,14 +11,13 @@ function Employee() {
         password: "",
         role: "cashier",
     });
-    const [selectedUserId, setSelectedUserId] = useState("");
-    const [permissions, setPermissions] = useState({});
     const [editing, setEditing] = useState({
         id: "",
         name: "",
         email: "",
         role: "",
     });
+    const [permission, setPermission] = useState(null);
 
     const load = async () => {
         const res = await axios.get(`${API_URL}/user`);
@@ -34,54 +33,19 @@ function Employee() {
         [],
     );
 
-    const permissionKeys = useMemo(
-        () => [
-            "readProduct",
-            "createProduct",
-            "updateProduct",
-            "deleteProduct",
-            "readOrder",
-            "createOrder",
-            "updateOrder",
-            "deleteOrder",
-            "readCustomer",
-            "createCustomer",
-            "updateCustomer",
-            "deleteCustomer",
-            "readInventory",
-            "createInventory",
-            "updateInventory",
-            "deleteInventory",
-            "readDiscount",
-            "createDiscount",
-            "updateDiscount",
-            "deleteDiscount",
-            "readSupplier",
-            "createSupplier",
-            "updateSupplier",
-            "deleteSupplier",
-            "readPurchaseOrder",
-            "createPurchaseOrder",
-            "updatePurchaseOrder",
-            "deletePurchaseOrder",
-            "readInvoice",
-            "readReport",
-            "createReturn",
-            "readReturn",
-            "readPayment",
-        ],
-        [],
-    );
+    useEffect(() => {
+        if (!currentUser?.id) return;
+        if (currentUser?.role === "admin") return setPermission({ admin: true });
+        axios
+            .get(`${API_URL}/user/permission/${currentUser.id}`)
+            .then((res) => setPermission(res.data || {}))
+            .catch(() => setPermission({}));
+    }, [currentUser]);
 
-    const loadPermissions = async (userId) => {
-        if (!userId) return;
-        try {
-            const res = await axios.get(`${API_URL}/user/permission/${userId}`);
-            setPermissions(res.data || {});
-        } catch (error) {
-            setPermissions({ userId });
-        }
-    };
+    const canCreateUser = permission?.admin || permission?.createUser;
+    const canUpdateUser = permission?.admin || permission?.updateUser;
+    const canDeleteUser = permission?.admin || permission?.deleteUser;
+    const canReadUser = permission?.admin || permission?.readUser;
 
     const create = async () => {
         if (!form.name || !form.email || !form.password)
@@ -94,172 +58,124 @@ function Employee() {
     return (
         <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
             <div className="text-xl font-semibold text-gray-900">Employees</div>
-            <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-                    <Input
-                        value={form.name}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, name: e.target.value }))
-                        }
-                        placeholder="Name"
-                    />
-                    <Input
-                        value={form.email}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, email: e.target.value }))
-                        }
-                        placeholder="Email"
-                    />
-                    <Input
-                        type="password"
-                        value={form.password}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, password: e.target.value }))
-                        }
-                        placeholder="Password"
-                    />
-                    <select
-                        value={form.role}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, role: e.target.value }))
-                        }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    >
-                        <option value="admin">Admin</option>
-                        <option value="manager">Manager</option>
-                        <option value="cashier">Cashier</option>
-                        <option value="staff">Staff</option>
-                    </select>
-                </div>
-                <button
-                    onClick={create}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
-                >
-                    Add Employee
-                </button>
-            </div>
-
-            {currentUser?.role === "admin" && (
+            {canCreateUser && (
                 <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
-                    <div className="font-semibold">Staff Permissions</div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+                        <Input
+                            value={form.name}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, name: e.target.value }))
+                            }
+                            placeholder="Name"
+                        />
+                        <Input
+                            value={form.email}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, email: e.target.value }))
+                            }
+                            placeholder="Email"
+                        />
+                        <Input
+                            type="password"
+                            value={form.password}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, password: e.target.value }))
+                            }
+                            placeholder="Password"
+                        />
                         <select
-                            value={selectedUserId}
-                            onChange={(e) => {
-                                const id = e.target.value;
-                                setSelectedUserId(id);
-                                loadPermissions(id);
-                            }}
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            value={form.role}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, role: e.target.value }))
+                            }
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         >
-                            <option value="">Select staff</option>
-                            {users.map((u) => (
-                                <option key={u._id} value={u._id}>
-                                    {u.name} ({u.role})
-                                </option>
-                            ))}
+                            <option value="admin">Admin</option>
+                            <option value="manager">Manager</option>
+                            <option value="cashier">Cashier</option>
+                            <option value="staff">Staff</option>
                         </select>
-                        <button
-                            onClick={async () => {
-                                if (!selectedUserId) return;
-                                await axios.post(`${API_URL}/user/permission`, {
-                                    userId: selectedUserId,
-                                    ...permissions,
-                                });
-                                alert("Permissions updated");
-                            }}
-                            className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
-                        >
-                            Save Permissions
-                        </button>
                     </div>
-                    {selectedUserId && (
-                        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-                            {permissionKeys.map((key) => (
-                                <label key={key} className="flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
-                                        checked={!!permissions[key]}
-                                        onChange={(e) =>
-                                            setPermissions((prev) => ({
-                                                ...prev,
-                                                [key]: e.target.checked,
-                                            }))
-                                        }
-                                    />
-                                    {key}
-                                </label>
-                            ))}
-                        </div>
-                    )}
+                    <button
+                        onClick={create}
+                        className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
+                    >
+                        Add Employee
+                    </button>
                 </div>
             )}
-            <div className="rounded-lg border border-gray-200 bg-white">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                        <tr>
-                            <th className="text-left px-4 py-3">Name</th>
-                            <th className="text-left px-4 py-3">Email</th>
-                            <th className="text-left px-4 py-3">Role</th>
-                            {currentUser?.role === "admin" && (
-                                <th className="text-left px-4 py-3">Actions</th>
-                            )}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((u) => (
-                            <tr key={u._id} className="border-t border-gray-300">
-                                <td className="px-4 py-3">{u.name}</td>
-                                <td className="px-4 py-3">{u.email}</td>
-                                <td className="px-4 py-3">{u.role}</td>
-                                {currentUser?.role === "admin" && (
-                                    <td className="px-4 py-3">
-                                        <button
-                                            onClick={() =>
-                                                setEditing({
-                                                    id: u._id,
-                                                    name: u.name,
-                                                    email: u.email,
-                                                    role: u.role,
-                                                })
-                                            }
-                                            className="mr-2 rounded-lg border border-gray-300 px-3 py-1 text-xs"
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            onClick={async () => {
-                                                if (
-                                                    !window.confirm(
-                                                        "Delete this employee?",
-                                                    )
-                                                )
-                                                    return;
-                                                await axios.delete(
-                                                    `${API_URL}/user/${u._id}`,
-                                                );
-                                                load();
-                                            }}
-                                            className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600"
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
+            {canReadUser && (
+                <div className="rounded-lg border border-gray-200 bg-white">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="text-left px-4 py-3">Name</th>
+                                <th className="text-left px-4 py-3">Email</th>
+                                <th className="text-left px-4 py-3">Role</th>
+                                {(canUpdateUser || canDeleteUser) && (
+                                    <th className="text-left px-4 py-3">Actions</th>
                                 )}
                             </tr>
-                        ))}
-                        {!users.length && (
-                            <tr>
-                                <td className="px-4 py-6 text-gray-500" colSpan={4}>
-                                    No employees
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {users.map((u) => (
+                                <tr key={u._id} className="border-t border-gray-300">
+                                    <td className="px-4 py-3">{u.name}</td>
+                                    <td className="px-4 py-3">{u.email}</td>
+                                    <td className="px-4 py-3">{u.role}</td>
+                                    {(canUpdateUser || canDeleteUser) && (
+                                        <td className="px-4 py-3">
+                                            {canUpdateUser && (
+                                                <button
+                                                    onClick={() =>
+                                                        setEditing({
+                                                            id: u._id,
+                                                            name: u.name,
+                                                            email: u.email,
+                                                            role: u.role,
+                                                        })
+                                                    }
+                                                    className="mr-2 rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                                >
+                                                    Edit
+                                                </button>
+                                            )}
+                                            {canDeleteUser && (
+                                                <button
+                                                    onClick={async () => {
+                                                        if (
+                                                            !window.confirm(
+                                                                "Delete this employee?",
+                                                            )
+                                                        )
+                                                            return;
+                                                        await axios.delete(
+                                                            `${API_URL}/user/${u._id}`,
+                                                        );
+                                                        load();
+                                                    }}
+                                                    className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600"
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                            {!users.length && (
+                                <tr>
+                                    <td className="px-4 py-6 text-gray-500" colSpan={4}>
+                                        No employees
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
-            {currentUser?.role === "admin" && editing.id && (
+            {canUpdateUser && editing.id && (
                 <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
                     <div className="font-semibold">Edit Employee</div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -291,7 +207,7 @@ function Employee() {
                                     role: e.target.value,
                                 }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         >
                             <option value="admin">Admin</option>
                             <option value="manager">Manager</option>

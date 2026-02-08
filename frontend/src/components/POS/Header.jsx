@@ -1,14 +1,30 @@
 import { GiHamburgerMenu } from "react-icons/gi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
 import { GoScreenFull } from "react-icons/go";
 import { RiResetRightFill } from "react-icons/ri";
 import { TiShoppingCart } from "react-icons/ti";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { FaLaptop } from "react-icons/fa";
 
 function Header() {
     const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
+    const user = useMemo(
+        () => JSON.parse(localStorage.getItem("user") || "null"),
+        [],
+    );
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("pos_store_id");
+        if (window?.axios?.defaults?.headers?.common?.Authorization) {
+            delete window.axios.defaults.headers.common.Authorization;
+        }
+        navigate("/login");
+    };
 
     return (
         <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -63,11 +79,52 @@ function Header() {
                         Dashboard
                     </Link>
 
-                    <img
-                        src="https://img.freepik.com/free-photo/front-view-business-woman-suit_23-2148603018.jpg"
-                        alt="User avatar"
-                        className="ml-2 h-10 w-10 rounded-lg border border-gray-200 object-cover"
-                    />
+                    <div className="relative ml-2">
+                        <button
+                            onClick={() => setUserMenuOpen((v) => !v)}
+                            className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-3 py-1.5"
+                        >
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold">
+                                {user?.name?.[0] || "U"}
+                            </div>
+                            <div className="leading-tight text-left">
+                                <div className="text-sm font-semibold text-gray-900">
+                                    {user?.name || "User"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {user?.email || ""}
+                                </div>
+                            </div>
+                        </button>
+                        {userMenuOpen && (
+                            <div className="absolute right-0 top-12 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
+                                <Link
+                                    to="/pos"
+                                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                                >
+                                    POS
+                                </Link>
+                                <Link
+                                    to="/orders"
+                                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                                >
+                                    Orders
+                                </Link>
+                                <Link
+                                    to="/"
+                                    className="block px-4 py-2 text-sm hover:bg-gray-50"
+                                >
+                                    Dashboard
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                >
+                                    Logout
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
             {open && (
@@ -98,12 +155,34 @@ function Header() {
                         </Link>
                     </div>
 
-                    <div className="mt-4 flex justify-end">
-                        <img
-                            src="https://img.freepik.com/free-photo/front-view-business-woman-suit_23-2148603018.jpg"
-                            alt="User avatar"
-                            className="h-10 w-10 rounded-lg border border-gray-200 object-cover"
-                        />
+                    <div className="mt-4 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary font-semibold">
+                                {user?.name?.[0] || "U"}
+                            </div>
+                            <div className="leading-tight">
+                                <div className="text-sm font-semibold text-gray-900">
+                                    {user?.name || "User"}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {user?.email || ""}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Link
+                                to="/"
+                                className="rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                            >
+                                Dashboard
+                            </Link>
+                            <button
+                                onClick={handleLogout}
+                                className="rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                            >
+                                Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

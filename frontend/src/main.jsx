@@ -24,6 +24,7 @@ import Invoices from "./pages/Invoices.jsx";
 import Discount from "./pages/Discount.jsx";
 import Customers from "./pages/Customers.jsx";
 import Employee from "./pages/Employee.jsx";
+import RolePermissions from "./pages/RolePermissions.jsx";
 import Reports from "./pages/Reports.jsx";
 import Settings from "./pages/Settings.jsx";
 import Order from "./pages/Order.jsx";
@@ -89,6 +90,7 @@ const router = createBrowserRouter([
       { path: "returns", element: <Returns /> },
       { path: "customers", element: <Customers /> },
       { path: "employee", element: <Employee /> },
+      { path: "role-permissions", element: <RolePermissions /> },
       { path: "reports", element: <Reports /> },
       { path: "settings", element: <Settings /> },
         ],

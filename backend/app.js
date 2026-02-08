@@ -21,6 +21,7 @@ import purchaseOrderRoutes from "./routes/purchaseOrder.route.js";
 import invoiceRoutes from "./routes/invoice.route.js";
 import returnRoutes from "./routes/return.route.js";
 import reportRoutes from "./routes/report.route.js";
+import rolePermissionRoutes from "./routes/rolePermission.route.js";
 import cors from "cors";
 
 const app = express();
@@ -50,6 +51,7 @@ app.use("/purchase-order", purchaseOrderRoutes);
 app.use("/invoice", invoiceRoutes);
 app.use("/return", returnRoutes);
 app.use("/report", reportRoutes);
+app.use("/role-permission", rolePermissionRoutes);
 
 app.get("/", (req, res) => {
     res.status(200).json({
