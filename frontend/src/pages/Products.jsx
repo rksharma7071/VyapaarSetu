@@ -8,6 +8,7 @@ import { FaCheck } from "react-icons/fa6";
 import { GoChevronDown } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
+import axios from "axios";
 
 import {
     fetchProducts,
@@ -15,8 +16,9 @@ import {
     setCategoryFilter,
     setTypeFilter,
 } from "../store/productsSlice";
-import Loading from "../components/Loading";
 import Input from "../components/UI/Input";
+import { API_URL } from "../utils/api";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Products() {
     const dispatch = useDispatch();
@@ -34,11 +36,27 @@ function Products() {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [selectedProducts, setSelectedProducts] = useState([]);
+    const [permission, setPermission] = useState(null);
+    const [bulkStatus, setBulkStatus] = useState("");
+    const { notify } = useAlert();
+    const [bulkEditOpen, setBulkEditOpen] = useState(false);
+    const [bulkEditRows, setBulkEditRows] = useState([]);
+    const [bulkEditOriginal, setBulkEditOriginal] = useState([]);
 
     /* ---------------- FETCH ---------------- */
     useEffect(() => {
         dispatch(fetchProducts());
     }, [dispatch]);
+
+    useEffect(() => {
+        const user = JSON.parse(localStorage.getItem("user") || "null");
+        if (!user?.id) return;
+        if (user?.role === "admin") return setPermission({ admin: true });
+        axios
+            .get(`${API_URL}/user/permission/${user.id}`)
+            .then((res) => setPermission(res.data || {}))
+            .catch(() => setPermission({}));
+    }, []);
 
     /* ---------------- FILTER OPTIONS ---------------- */
     const categories = useMemo(
@@ -116,6 +134,137 @@ function Products() {
         dispatch(fetchProducts());
     };
 
+    const canDelete = permission?.admin || permission?.deleteProduct;
+    const canUpdate = permission?.admin || permission?.updateProduct;
+    const canCreate = permission?.admin || permission?.createProduct;
+
+    const handleBulkDelete = async () => {
+        if (!selectedProducts.length) return;
+        if (!canDelete) {
+            notify({
+                type: "warning",
+                title: "Permission denied",
+                message: "You don’t have access to delete products.",
+            });
+            return;
+        }
+        if (!window.confirm(`Delete ${selectedProducts.length} products?`)) return;
+        const toDelete = products.filter((p) => selectedProducts.includes(p._id));
+        await Promise.all(toDelete.map((p) => dispatch(deleteProduct(p.slug))));
+        setSelectedProducts([]);
+    };
+
+    const handleBulkStatus = async () => {
+        if (!selectedProducts.length) return;
+        if (!canUpdate) {
+            notify({
+                type: "warning",
+                title: "Permission denied",
+                message: "You don’t have access to update products.",
+            });
+            return;
+        }
+        if (bulkStatus === "") {
+            notify({
+                type: "warning",
+                title: "Select status",
+                message: "Choose a status first.",
+            });
+            return;
+        }
+        const toUpdate = products.filter((p) => selectedProducts.includes(p._id));
+        await Promise.all(
+            toUpdate.map((p) => {
+                const formData = new FormData();
+                formData.append("isActive", bulkStatus);
+                return axios.patch(
+                    `${API_URL}/product/${p.slug}`,
+                    formData,
+                );
+            }),
+        );
+        setBulkStatus("");
+        setSelectedProducts([]);
+        dispatch(fetchProducts());
+    };
+
+    const openBulkEdit = () => {
+        if (!selectedProducts.length) return;
+        const rows = products
+            .filter((p) => selectedProducts.includes(p._id))
+            .map((p) => ({
+                _id: p._id,
+                slug: p.slug,
+                name: p.name,
+                category: p.category,
+                price: p.price ?? "",
+                taxRate: p.taxRate ?? "",
+                gstRate: p.gstRate ?? "",
+                stockQty: p.stockQty ?? "",
+                unit: p.unit ?? "",
+                isActive: p.isActive ?? true,
+            }));
+        setBulkEditRows(rows);
+        setBulkEditOriginal(rows);
+        setBulkEditOpen(true);
+    };
+
+    const updateBulkRow = (id, key, value) => {
+        setBulkEditRows((prev) =>
+            prev.map((row) => (row._id === id ? { ...row, [key]: value } : row)),
+        );
+    };
+
+    const saveBulkEdit = async () => {
+        if (!canUpdate) {
+            notify({
+                type: "warning",
+                title: "Permission denied",
+                message: "You don’t have access to update products.",
+            });
+            return;
+        }
+        if (!bulkEditRows.length) return;
+        await Promise.all(
+            bulkEditRows.map((row) => {
+                const formData = new FormData();
+                formData.append("name", row.name);
+                formData.append("category", row.category);
+                formData.append("price", row.price);
+                formData.append("taxRate", row.taxRate);
+                formData.append("gstRate", row.gstRate);
+                formData.append("stockQty", row.stockQty);
+                formData.append("unit", row.unit);
+                formData.append("isActive", row.isActive);
+                return axios.patch(`${API_URL}/product/${row.slug}`, formData);
+            }),
+        );
+        setBulkEditOpen(false);
+        setBulkEditRows([]);
+        setSelectedProducts([]);
+        dispatch(fetchProducts());
+    };
+
+    const bulkEditDirty = useMemo(() => {
+        if (!bulkEditRows.length || !bulkEditOriginal.length) return false;
+        if (bulkEditRows.length !== bulkEditOriginal.length) return true;
+        const byId = new Map(bulkEditOriginal.map((r) => [r._id, r]));
+        return bulkEditRows.some((row) => {
+            const orig = byId.get(row._id);
+            if (!orig) return true;
+            return (
+                String(row.name) !== String(orig.name) ||
+                String(row.category) !== String(orig.category) ||
+                String(row.price) !== String(orig.price) ||
+                String(row.taxRate) !== String(orig.taxRate) ||
+                String(row.gstRate) !== String(orig.gstRate) ||
+                String(row.stockQty) !== String(orig.stockQty) ||
+                String(row.unit) !== String(orig.unit) ||
+                String(row.isActive) !== String(orig.isActive)
+            );
+        });
+    }, [bulkEditRows, bulkEditOriginal]);
+
     const getPageNumbers = () => {
         const pages = [];
         const maxVisiblePages = 5;
@@ -155,7 +304,7 @@ function Products() {
     const isAllSelected = currentProducts.length > 0 && currentProducts.every((p) => selectedProducts.includes(p._id));
 
     if (loading) {
-        <Loading />
+        return null;
     }
 
     if (error) {
@@ -181,17 +330,205 @@ function Products() {
 
     return (
         <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
-            <div className='flex justify-between items-center'>
+            <div className='flex flex-col gap-3 md:flex-row md:justify-between md:items-center'>
                 <div className='text-xl font-semibold text-gray-900'>Products</div>
-                <div className='flex gap-3 items-center font-semibold text-gray-900'>
-                    <button onClick={() => navigate("/create-products")} className="flex justify-between items-center gap-2 w-auto rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary/30">
-                        <FiPlusCircle className='text-lg' /> Add
-                    </button>
+                <div className='flex flex-wrap gap-3 items-center font-semibold text-gray-900'>
+                    {canCreate && (
+                        <button onClick={() => navigate("/create-products")} className="flex justify-between items-center gap-2 w-auto rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-primary active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary/30">
+                            <FiPlusCircle className='text-lg' /> Add
+                        </button>
+                    )}
                     <button className="flex justify-between items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30">
                         <FiDownload className='text-lg' /> Import
                     </button>
+                    {selectedProducts.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700">
+                                {selectedProducts.length} selected
+                            </span>
+                            {canUpdate && (
+                                <>
+                                    <select
+                                        value={bulkStatus}
+                                        onChange={(e) => setBulkStatus(e.target.value)}
+                                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                                    >
+                                        <option value="">Set status</option>
+                                        <option value="true">Publish</option>
+                                        <option value="false">Draft</option>
+                                    </select>
+                                    {bulkStatus !== "" && (
+                                        <button
+                                            onClick={handleBulkStatus}
+                                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                        >
+                                            Update Status
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={openBulkEdit}
+                                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                    >
+                                        Bulk Edit
+                                    </button>
+                                </>
+                            )}
+                            {canDelete && (
+                                <button
+                                    onClick={handleBulkDelete}
+                                    className="rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600"
+                                >
+                                    Delete Selected
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
+
+            {bulkEditOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-6xl rounded-xl bg-white p-5">
+                        <div className="mb-4 flex items-center justify-between">
+                            <div className="text-lg font-semibold text-gray-900">
+                                Bulk Edit Products
+                            </div>
+                            <button
+                                onClick={() => setBulkEditOpen(false)}
+                                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+                            >
+                                Close
+                            </button>
+                        </div>
+
+                        <div className="overflow-auto border border-gray-200 rounded-lg">
+                            <table className="min-w-[900px] w-full text-sm">
+                                <thead className="bg-gray-100">
+                                    <tr>
+                                        <th className="px-3 py-2 text-left">Product</th>
+                                        <th className="px-3 py-2 text-left">Category</th>
+                                        <th className="px-3 py-2 text-right">Price</th>
+                                        <th className="px-3 py-2 text-right">Tax %</th>
+                                        <th className="px-3 py-2 text-right">GST %</th>
+                                        <th className="px-3 py-2 text-right">Qty</th>
+                                        <th className="px-3 py-2 text-left">Unit</th>
+                                        <th className="px-3 py-2 text-left">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bulkEditRows.map((row) => (
+                                        <tr key={row._id} className="border-t">
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    value={row.name}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "name", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    value={row.category}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "category", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={row.price}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "price", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={row.taxRate}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "taxRate", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={row.gstRate}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "gstRate", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    type="number"
+                                                    value={row.stockQty}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "stockQty", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    value={row.unit}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(row._id, "unit", e.target.value)
+                                                    }
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <select
+                                                    value={String(row.isActive)}
+                                                    onChange={(e) =>
+                                                        updateBulkRow(
+                                                            row._id,
+                                                            "isActive",
+                                                            e.target.value === "true",
+                                                        )
+                                                    }
+                                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                                >
+                                                    <option value="true">Publish</option>
+                                                    <option value="false">Draft</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {!bulkEditRows.length && (
+                                        <tr>
+                                            <td className="px-3 py-6 text-center text-gray-500" colSpan={8}>
+                                                No products selected
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-end gap-2">
+                            <button
+                                onClick={() => setBulkEditOpen(false)}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                            >
+                                Cancel
+                            </button>
+                            {bulkEditDirty && (
+                                <button
+                                    onClick={saveBulkEdit}
+                                    className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
+                                >
+                                    Save All
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* SEARCH + FILTERS */}
 
@@ -262,6 +599,7 @@ function Products() {
                                     <th className="px-2 py-2 text-left font-semibold">Category</th>
                                     <th className="px-2 py-2 text-left font-semibold">Type</th>
                                     <th className="px-2 py-2 text-left font-semibold">Price</th>
+                                    <th className="px-2 py-2 text-left font-semibold">Status</th>
                                     <th className="px-2 py-2 text-left font-semibold">Unit</th>
                                     <th className="px-2 py-2 text-left font-semibold">Qty</th>
                                     <th className="px-2 py-2 text-center font-semibold">Actions</th>
@@ -300,6 +638,17 @@ function Products() {
                                         <td className="px-2 py-1 text-gray-600">{product.category}</td>
                                         <td className="px-2 py-1 text-gray-600">{product.type}</td>
                                         <td className="px-2 py-1 font-medium text-gray-800">₹{product.price}</td>
+                                        <td className="px-2 py-1">
+                                            <span
+                                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                                    product?.isActive
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : "bg-amber-100 text-amber-700"
+                                                }`}
+                                            >
+                                                {product?.isActive ? "Active" : "Draft"}
+                                            </span>
+                                        </td>
                                         <td className="px-2 py-1 text-gray-600">{product.unit}</td>
                                         <td className="px-2 py-1">
                                             <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{product.stockQty}</span>
@@ -321,13 +670,15 @@ function Products() {
                                                     <CiEdit className="text-lg group-hover:scale-110 transition" />
                                                 </button>
 
-                                                <button
+                                                {canDelete && (
+                                                    <button
                                                     title="Delete"
                                                     onClick={() => handleDelete(product.slug)}
                                                     className="group rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition hover:border-red-500 hover:bg-red-50 hover:text-red-600"
-                                                >
-                                                    <RiDeleteBin5Line className="text-lg group-hover:scale-110 transition" />
-                                                </button>
+                                                    >
+                                                        <RiDeleteBin5Line className="text-lg group-hover:scale-110 transition" />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

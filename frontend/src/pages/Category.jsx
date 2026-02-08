@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Category() {
     const storeId = useSelector((state) => state.stores.selectedStoreId);
@@ -10,6 +11,7 @@ function Category() {
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
     const [editing, setEditing] = useState({ id: "", name: "", slug: "" });
+    const { notify } = useAlert();
 
     const load = async () => {
         const res = await axios.get(
@@ -23,15 +25,35 @@ function Category() {
     }, [storeId]);
 
     const create = async () => {
-        if (!name || !slug) return alert("Name and slug required");
-        await axios.post(`${API_URL}/category`, {
-            name,
-            slug,
-            storeId,
-        });
-        setName("");
-        setSlug("");
-        load();
+        if (!name || !slug) {
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "Name and slug required.",
+            });
+            return;
+        }
+        try {
+            await axios.post(`${API_URL}/category`, {
+                name,
+                slug,
+                storeId,
+            });
+            setName("");
+            setSlug("");
+            notify({
+                type: "success",
+                title: "Category added",
+                message: "Category created successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: error.response?.data?.message || "Failed to create category.",
+            });
+        }
     };
 
     return (
@@ -83,15 +105,30 @@ function Category() {
                         />
                         <button
                             onClick={async () => {
-                                await axios.patch(
-                                    `${API_URL}/category/${editing.id}`,
-                                    {
-                                        name: editing.name,
-                                        slug: editing.slug,
-                                    },
-                                );
-                                setEditing({ id: "", name: "", slug: "" });
-                                load();
+                                try {
+                                    await axios.patch(
+                                        `${API_URL}/category/${editing.id}`,
+                                        {
+                                            name: editing.name,
+                                            slug: editing.slug,
+                                        },
+                                    );
+                                    setEditing({ id: "", name: "", slug: "" });
+                                    notify({
+                                        type: "success",
+                                        title: "Category updated",
+                                        message: "Category updated successfully.",
+                                    });
+                                    load();
+                                } catch (error) {
+                                    notify({
+                                        type: "error",
+                                        title: "Update failed",
+                                        message:
+                                            error.response?.data?.message ||
+                                            "Failed to update category.",
+                                    });
+                                }
                             }}
                             className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
                         >
@@ -143,10 +180,25 @@ function Category() {
                                                 )
                                             )
                                                 return;
-                                            await axios.delete(
-                                                `${API_URL}/category/${c._id}`,
-                                            );
-                                            load();
+                                            try {
+                                                await axios.delete(
+                                                    `${API_URL}/category/${c._id}`,
+                                                );
+                                                notify({
+                                                    type: "success",
+                                                    title: "Category deleted",
+                                                    message: "Category deleted successfully.",
+                                                });
+                                                load();
+                                            } catch (error) {
+                                                notify({
+                                                    type: "error",
+                                                    title: "Delete failed",
+                                                    message:
+                                                        error.response?.data?.message ||
+                                                        "Failed to delete category.",
+                                                });
+                                            }
                                         }}
                                         className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600"
                                     >

@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProductById } from "../store/productsSlice";
 import { LuArrowLeft } from "react-icons/lu";
-import Loading from "../components/Loading";
 
 function ProductById() {
     const { slug } = useParams();
@@ -19,7 +18,7 @@ function ProductById() {
     }, [dispatch, slug]);
 
     if (loading) {
-        <Loading />
+        return null;
     }
 
     if (error) {

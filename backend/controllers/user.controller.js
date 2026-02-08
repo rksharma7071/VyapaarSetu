@@ -68,7 +68,7 @@ async function handleUpdateUserUsingId(req, res) {
             return res.status(403).json({ message: "Admin or manager access only" });
         }
         const { id } = req.params;
-        const { email, name, role, storeId } = req.body;
+        const { email, name, role, storeId, isActive } = req.body;
 
         const user = await User.findOne({ _id: id, storeId: req.user?.storeId });
         if (!user) {
@@ -82,6 +82,7 @@ async function handleUpdateUserUsingId(req, res) {
         if (name) user.name = name;
         if (role) user.role = role;
         if (storeId !== undefined) user.storeId = storeId;
+        if (isActive !== undefined) user.isActive = isActive;
 
         const updatedUser = await user.save();
 

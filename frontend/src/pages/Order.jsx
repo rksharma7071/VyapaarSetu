@@ -9,7 +9,6 @@ import { GoChevronDown } from "react-icons/go";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchOrders, setPaymentFilter, setStatusFilter } from "../store/ordersSlice";
-import Loading from "../components/Loading";
 import Input from "../components/UI/Input";
 
 function Order() {
@@ -98,7 +97,7 @@ function Order() {
 
 
     if (loading) {
-        <Loading />
+        return null;
     }
 
     if (error) {

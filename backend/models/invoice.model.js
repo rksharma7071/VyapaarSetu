@@ -20,7 +20,7 @@ const invoiceItemSchema = new mongoose.Schema(
 
 const invoiceSchema = new mongoose.Schema(
     {
-        invoiceNumber: { type: String, required: true, unique: true },
+        invoiceNumber: { type: String, required: true },
         orderId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Order",
@@ -54,6 +54,8 @@ const invoiceSchema = new mongoose.Schema(
     },
     { timestamps: true },
 );
+
+invoiceSchema.index({ storeId: 1, invoiceNumber: 1 }, { unique: true });
 
 const Invoice = mongoose.model("Invoice", invoiceSchema);
 

@@ -11,9 +11,11 @@ import axios from 'axios';
 import Input from '../components/UI/Input.jsx';
 import Textarea from '../components/UI/Textarea.jsx';
 import { useEffect } from "react";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function EditProduct() {
     const loader = useLoaderData();
+    const { notify } = useAlert();
 
     const [product, setProduct] = useState(loader || {});
     const [preview, setPreview] = useState(product?.image || "");
@@ -48,10 +50,27 @@ function EditProduct() {
 
     const handleChangeFile = (e) => {
         const selectFile = e.target.files[0];
-        if (selectFile) {
-            setFile(selectFile)
-            setPreview(URL.createObjectURL(selectFile))
+        if (!selectFile) return;
+        const allowed = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowed.includes(selectFile.type)) {
+            notify({
+                type: "error",
+                title: "Unsupported file",
+                message: "Use JPG, PNG, or WEBP.",
+            });
+            return;
         }
+        const maxSize = 5 * 1024 * 1024;
+        if (selectFile.size > maxSize) {
+            notify({
+                type: "error",
+                title: "File too large",
+                message: "Image too large. Max 5MB.",
+            });
+            return;
+        }
+        setFile(selectFile)
+        setPreview(URL.createObjectURL(selectFile))
     }
 
     const handleForm = async (e) => {
@@ -73,11 +92,23 @@ function EditProduct() {
         if (product.slug !== loader.slug) { formData.append("newSlug", product.slug); }
         if (file) { formData.append("image", file); }
 
-        await axios.patch(`${import.meta.env.VITE_API_URL}/product/${loader.slug}`, formData);
-        localStorage.removeItem('products_cache');
-        localStorage.removeItem('products_cache_time');
-        navigate("/products");
-        console.log("Product Added Successfully.");
+        try {
+            await axios.patch(`${import.meta.env.VITE_API_URL}/product/${loader.slug}`, formData);
+            localStorage.removeItem('products_cache');
+            localStorage.removeItem('products_cache_time');
+            notify({
+                type: "success",
+                title: "Product updated",
+                message: "Product updated successfully.",
+            });
+            navigate("/products");
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Update failed",
+                message: error.response?.data?.message || "Failed to update product.",
+            });
+        }
 
     }
 
@@ -142,7 +173,7 @@ function EditProduct() {
                     </div>
                     <div>
                         <label htmlFor='price' className="mb-2 block text-sm font-medium text-gray-700">Price <span className="text-red-500">*</span></label>
-                        <Input type="number" name="price" value={product.price} onChange={handleChange} />
+                        <Input type="number" step="0.01" name="price" value={product.price} onChange={handleChange} />
                     </div>
                     <div>
                         <label htmlFor='sku' className="mb-2 block text-sm font-medium text-gray-700">SKU <span className="text-red-500">*</span></label>
@@ -150,7 +181,7 @@ function EditProduct() {
                     </div>
                     <div>
                         <label htmlFor='taxRate' className="mb-2 block text-sm font-medium text-gray-700">Tax Rate (%) <span className="text-red-500">*</span></label>
-                        <Input type="number" name="taxRate" value={product.taxRate} onChange={handleChange} />
+                        <Input type="number" step="0.01" name="taxRate" value={product.taxRate} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Stock Quantity <span className="text-red-500">*</span></label>
@@ -168,7 +199,7 @@ function EditProduct() {
                         <input
                             type="file"
                             name="image"
-                            accept="image/*"
+                            accept="image/jpeg,image/png,image/webp"
                             onChange={handleChangeFile}
                             className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm file:mr-4 file:rounded-l-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:bg-primary/90"
                         />

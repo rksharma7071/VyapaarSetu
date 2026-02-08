@@ -10,10 +10,12 @@ import Input from "../components/UI/Input";
 import Textarea from "../components/UI/Textarea";
 import { useSelector } from "react-redux";
 import axios from "axios";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function CreateProducts() {
     const navigate = useNavigate();
     const storeId = useSelector((state) => state.stores.selectedStoreId);
+    const { notify } = useAlert();
 
     const [slugEdited, setSlugEdited] = useState(false);
     const [product, setProduct] = useState({
@@ -62,7 +64,27 @@ function CreateProducts() {
     };
 
     const handleFileChange = (e) => {
-        setImage(e.target.files[0]);
+        const file = e.target.files[0];
+        if (!file) return;
+        const allowed = ["image/jpeg", "image/png", "image/webp"];
+        if (!allowed.includes(file.type)) {
+            notify({
+                type: "error",
+                title: "Unsupported file",
+                message: "Use JPG, PNG, or WEBP.",
+            });
+            return;
+        }
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            notify({
+                type: "error",
+                title: "File too large",
+                message: "Image too large. Max 5MB.",
+            });
+            return;
+        }
+        setImage(file);
     };
 
     const handleForm = async (e) => {
@@ -86,9 +108,19 @@ function CreateProducts() {
             await axios.post(`${import.meta.env.VITE_API_URL}/product`, formData);
             localStorage.removeItem('products_cache');
             localStorage.removeItem('products_cache_time');
+            notify({
+                type: "success",
+                title: "Product created",
+                message: "Product added successfully.",
+            });
             navigate("/products");
         } catch (err) {
             console.error("Create product failed:", err.response?.data || err);
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: err.response?.data?.message || "Failed to create product.",
+            });
         }
     };
 
@@ -148,7 +180,7 @@ function CreateProducts() {
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Price <span className="text-red-500">*</span></label>
-                        <Input type="number" name="price" value={product.price} onChange={handleChange} />
+                        <Input type="number" step="0.01" name="price" value={product.price} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">SKU <span className="text-red-500">*</span></label>
@@ -157,17 +189,17 @@ function CreateProducts() {
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">Tax Rate (%) <span className="text-red-500">*</span></label>
                         {/* <input
-                            type="number"
+                            type="text"
                             name="taxRate"
                             value={product.taxRate}
                             onChange={handleChange}
                             className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         /> */}
-                        <Input name="taxRate" value={product.taxRate} onChange={handleChange} />
+                        <Input type="number" step="0.01" name="taxRate" value={product.taxRate} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">GST Rate (%)</label>
-                        <Input name="gstRate" value={product.gstRate} onChange={handleChange} />
+                        <Input type="number" step="0.01" name="gstRate" value={product.gstRate} onChange={handleChange} />
                     </div>
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">HSN Code</label>
@@ -186,6 +218,7 @@ function CreateProducts() {
                         <input
                             type="file"
                             name="image"
+                            accept="image/jpeg,image/png,image/webp"
                             onChange={handleFileChange}
                             className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm file:mr-4 file:rounded-l-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:bg-primary/90"
                         />

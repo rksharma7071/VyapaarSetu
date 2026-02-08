@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/user.model.js";
+import Store from "../models/store.model.js";
 
 const authMiddleware = (req, res, next) => {
     try {
@@ -12,14 +13,28 @@ const authMiddleware = (req, res, next) => {
         req.user = decoded;
 
         return User.findById(decoded.id)
-            .select("_id role storeId")
+            .select("_id role storeId isActive sessionId")
             .then((user) => {
                 if (!user) {
                     return res.status(401).json({ message: "User not found" });
                 }
+                if (user.isActive === false) {
+                    return res.status(403).json({ message: "Account deactivated" });
+                }
+                if (decoded.sid && user.sessionId && decoded.sid !== user.sessionId) {
+                    return res.status(401).json({ message: "Session expired" });
+                }
                 req.user.storeId = user.storeId || null;
                 req.user.role = user.role;
-                return next();
+                if (!user.storeId) return next();
+                return Store.findById(user.storeId)
+                    .select("isActive subscriptionStatus subscriptionEnd")
+                    .then((store) => {
+                        if (!store || store.isActive === false) {
+                            return res.status(403).json({ message: "Store suspended" });
+                        }
+                        return next();
+                    });
             });
     } catch (error) {
         return res.status(401).json({ message: "Invalid or expired token" });

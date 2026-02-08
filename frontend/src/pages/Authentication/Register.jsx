@@ -6,6 +6,7 @@ import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 import { LuUser } from "react-icons/lu";
 import axios from 'axios';
 import Input from "../../components/UI/Input";
+import { useAlert } from "../../components/UI/AlertProvider";
 
 function Register() {
     const navigate = useNavigate();
@@ -18,6 +19,7 @@ function Register() {
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const { notify } = useAlert();
 
     const handleShowPassword = () => {
         setShowPassword(prev => !prev);
@@ -41,11 +43,19 @@ function Register() {
         const { name, email, password, confirmpassword } = register;
 
         if (!name || !email || !password || !confirmpassword) {
-            alert("All fields are required");
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "All fields are required.",
+            });
             return;
         }
         if (password !== confirmpassword) {
-            alert("Password do not match");
+            notify({
+                type: "warning",
+                title: "Password mismatch",
+                message: "Password does not match.",
+            });
             return;
         }
 
@@ -62,6 +72,9 @@ function Register() {
                 payload,
             );
             localStorage.setItem("token", data.token);
+            if (data.refreshToken) {
+                localStorage.setItem("refresh_token", data.refreshToken);
+            }
             localStorage.setItem("user", JSON.stringify(data.user));
             axios.defaults.headers.common.Authorization = `Bearer ${data.token}`;
             if (remember) {
@@ -73,11 +86,20 @@ function Register() {
 
             console.log("Signup Success: ", data);
 
+            notify({
+                type: "success",
+                title: "Account created",
+                message: "Your account was created successfully.",
+            });
             navigate("/store-setup");
         } catch (error) {
             const message = `Signup Error: ${error.response?.data?.message}` || "Registration failed";
             console.error("Signup Error: ", message);
-            alert(message)
+            notify({
+                type: "error",
+                title: "Signup failed",
+                message,
+            });
         }
 
 

@@ -26,6 +26,16 @@ export async function decrementInventoryWithBatches(storeId, productId, qty) {
         isActive: true,
     }).sort({ expiryDate: 1, createdAt: 1 });
 
+    if (!batches.length) {
+        const item = await ensureInventoryItem(storeId, productId);
+        if (item.stockQty < qty) {
+            throw new Error("Insufficient stock");
+        }
+        item.stockQty = Math.max(0, item.stockQty - qty);
+        await item.save();
+        return item;
+    }
+
     let remaining = qty;
     for (const batch of batches) {
         if (remaining <= 0) break;

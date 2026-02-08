@@ -2,14 +2,23 @@ import React, { useState } from "react";
 import axios from "axios";
 import { API_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Pricing() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const user = JSON.parse(localStorage.getItem("user") || "null");
+    const { notify } = useAlert();
 
     const handleSubscribe = async () => {
-        if (!user?.storeId) return alert("Store not linked to account");
+        if (!user?.storeId) {
+            notify({
+                type: "warning",
+                title: "Store not linked",
+                message: "Store not linked to account.",
+            });
+            return;
+        }
         try {
             setLoading(true);
             const res = await axios.post(
@@ -21,9 +30,20 @@ function Pricing() {
                 subscriptionActive: true,
             };
             localStorage.setItem("user", JSON.stringify(updated));
+            notify({
+                type: "success",
+                title: "Subscription active",
+                message: "Subscription activated successfully.",
+            });
             navigate("/");
         } catch (error) {
-            alert("Subscription activation failed");
+            notify({
+                type: "error",
+                title: "Activation failed",
+                message:
+                    error.response?.data?.message ||
+                    "Subscription activation failed.",
+            });
         } finally {
             setLoading(false);
         }

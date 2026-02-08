@@ -5,7 +5,7 @@ function Loading() {
         <div className="loader-overlay">
             <div className="loader"></div>
 
-            <style jsx>{`
+            <style>{`
                 .loader-overlay {
                 position: fixed;
                 inset: 0;

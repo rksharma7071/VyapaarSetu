@@ -6,6 +6,9 @@ import Store from "../models/store.model.js";
 import { decrementInventoryWithBatches, incrementInventory } from "../utils/inventory.js";
 import Invoice from "../models/invoice.model.js";
 import Customer from "../models/customer.model.js";
+import { logActivity } from "../utils/activityLog.js";
+import Inventory from "../models/inventory.model.js";
+import { Payment } from "../models/payment.model.js";
 
 async function getAllOrder(req, res) {
     try {
@@ -15,7 +18,7 @@ async function getAllOrder(req, res) {
         }
         const orders = await Order.find({ storeId })
             .populate("customerId", "name email")
-            .populate("items.productId", "name price")
+            .populate("items.productId", "name price image")
             .sort({ createdAt: -1 });
 
         return res.status(200).json({
@@ -49,7 +52,7 @@ async function getOrderById(req, res) {
 
         const order = await Order.findOne({ _id: id, storeId })
             .populate("customerId", "name email")
-            .populate("items.productId", "name price");
+            .populate("items.productId", "name price image");
 
         if (!order) {
             return res.status(404).json({
@@ -70,6 +73,8 @@ async function getOrderById(req, res) {
         });
     }
 }
+
+const round2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
 async function createOrder(req, res) {
     try {
@@ -122,6 +127,7 @@ async function createOrder(req, res) {
 
         const store = await Store.findById(storeId);
         const storeState = store?.state || "";
+        const storeDefaultTaxRate = Number(store?.defaultTaxRate || 0);
         const customerState = customer?.state || "";
         const isInterstate =
             storeState && customerState
@@ -149,35 +155,53 @@ async function createOrder(req, res) {
 
             const qty = item.qty || 1;
 
-            if (product.stockQty < qty) {
+            const inventoryItem = await Inventory.findOne({
+                storeId,
+                productId: product._id,
+            }).lean();
+            const availableQty = inventoryItem?.stockQty ?? product.stockQty ?? 0;
+
+            if (availableQty < qty) {
                 return res.status(400).json({
                     success: false,
                     message: `Insufficient stock for ${product.name}`,
                 });
             }
 
-            const unitPrice = product.price;
-            const totalPrice = qty * unitPrice;
+            const unitPrice = round2(product.price);
+            const totalPrice = round2(qty * unitPrice);
 
-            subtotal += totalPrice;
+            subtotal = round2(subtotal + totalPrice);
 
-            await decrementInventoryWithBatches(storeId, product._id, qty);
+            try {
+                await decrementInventoryWithBatches(storeId, product._id, qty);
+            } catch (err) {
+                return res.status(400).json({
+                    success: false,
+                    message: err?.message || `Insufficient stock for ${product.name}`,
+                });
+            }
 
             let cgst = 0;
             let sgst = 0;
             let igst = 0;
-            const gstRate = Number(product.gstRate || product.taxRate || 0);
+            const gstRate = Number(
+                product.gstRate ||
+                product.taxRate ||
+                storeDefaultTaxRate ||
+                0,
+            );
             if (gstRate > 0) {
                 if (isInterstate) {
-                    igst = (totalPrice * gstRate) / 100;
+                    igst = round2((totalPrice * gstRate) / 100);
                 } else {
-                    cgst = (totalPrice * gstRate) / 200;
-                    sgst = (totalPrice * gstRate) / 200;
+                    cgst = round2((totalPrice * gstRate) / 200);
+                    sgst = round2((totalPrice * gstRate) / 200);
                 }
             }
-            cgstTotal += cgst;
-            sgstTotal += sgst;
-            igstTotal += igst;
+            cgstTotal = round2(cgstTotal + cgst);
+            sgstTotal = round2(sgstTotal + sgst);
+            igstTotal = round2(igstTotal + igst);
 
             orderItems.push({
                 productId: product._id,
@@ -193,11 +217,11 @@ async function createOrder(req, res) {
             });
         }
 
-        const taxTotal = cgstTotal + sgstTotal + igstTotal;
-        const total = subtotal + taxTotal - Number(discount);
+        const taxTotal = round2(cgstTotal + sgstTotal + igstTotal);
+        const total = round2(subtotal + taxTotal - Number(discount));
 
         const counter = await Counter.findOneAndUpdate(
-            { name: "pos_order" },
+            { name: "pos_order", storeId },
             { $inc: { seq: 1 } },
             { new: true, upsert: true },
         );
@@ -221,10 +245,29 @@ async function createOrder(req, res) {
             notes,
         });
 
+        if (paymentMethod !== "razorpay") {
+            const payment = await Payment.create({
+                orderId: order._id,
+                storeId: order.storeId,
+                provider: paymentMethod,
+                status: "paid",
+                amount: total,
+                currency: "INR",
+                mode: "offline",
+            });
+            order.paymentRecordId = payment._id;
+            order.paymentMode = "offline";
+            order.paymentDetails = {
+                provider: paymentMethod,
+                status: "paid",
+            };
+            await order.save();
+        }
+
         const existingInvoice = await Invoice.findOne({ orderId: order._id });
         if (!existingInvoice) {
             const invoiceNumber = await Counter.findOneAndUpdate(
-                { name: "invoice" },
+                { name: "invoice", storeId },
                 { $inc: { seq: 1 } },
                 { new: true, upsert: true },
             );
@@ -258,6 +301,16 @@ async function createOrder(req, res) {
             });
         }
 
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "create",
+            entityType: "order",
+            entityId: order._id,
+            message: `New order created: ${order.orderNumber}`,
+            meta: { total },
+        });
+
         return res.status(201).json({
             success: true,
             message: "POS order created successfully",
@@ -267,7 +320,7 @@ async function createOrder(req, res) {
         console.error("Create POS order error:", error);
         return res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: error?.message || "Internal Server Error",
         });
     }
 }
@@ -342,6 +395,16 @@ async function updateOrder(req, res) {
         await order.save({ session });
         await session.commitTransaction();
 
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "update",
+            entityType: "order",
+            entityId: order._id,
+            message: `Order updated: ${order.orderNumber}`,
+            meta: { status: order.status, paymentStatus: order.paymentStatus },
+        });
+
         return res.status(200).json({
             success: true,
             message: "Order updated successfully",
@@ -410,6 +473,16 @@ async function deleteOrder(req, res) {
 
         await session.commitTransaction();
         session.endSession();
+
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "update",
+            entityType: "order",
+            entityId: order._id,
+            message: `Order cancelled: ${order.orderNumber}`,
+            meta: { status: order.status, paymentStatus: order.paymentStatus },
+        });
 
         return res.status(200).json({
             success: true,

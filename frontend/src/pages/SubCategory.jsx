@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function SubCategory() {
     const storeId = useSelector((state) => state.stores.selectedStoreId);
@@ -11,6 +12,7 @@ function SubCategory() {
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
     const [parentId, setParentId] = useState("");
+    const { notify } = useAlert();
 
     const load = async () => {
         const res = await axios.get(
@@ -26,18 +28,37 @@ function SubCategory() {
     }, [storeId]);
 
     const create = async () => {
-        if (!name || !slug || !parentId)
-            return alert("Name, slug, parent required");
-        await axios.post(`${API_URL}/category`, {
-            name,
-            slug,
-            parentId,
-            storeId,
-        });
-        setName("");
-        setSlug("");
-        setParentId("");
-        load();
+        if (!name || !slug || !parentId) {
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "Name, slug, and parent required.",
+            });
+            return;
+        }
+        try {
+            await axios.post(`${API_URL}/category`, {
+                name,
+                slug,
+                parentId,
+                storeId,
+            });
+            setName("");
+            setSlug("");
+            setParentId("");
+            notify({
+                type: "success",
+                title: "Sub category added",
+                message: "Sub category created successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: error.response?.data?.message || "Failed to create sub category.",
+            });
+        }
     };
 
     return (

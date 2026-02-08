@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Discount() {
     const [items, setItems] = useState([]);
@@ -15,6 +16,7 @@ function Discount() {
         active: true,
     });
     const [editingId, setEditingId] = useState(null);
+    const { notify } = useAlert();
 
     const load = async () => {
         const res = await axios.get(`${API_URL}/discount`);
@@ -49,7 +51,12 @@ function Discount() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.discount_code || form.amount === "" || form.amount === null) {
-            return alert("Code and amount are required");
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "Code and amount are required.",
+            });
+            return;
         }
 
         const payload = {
@@ -59,13 +66,26 @@ function Discount() {
             amount: Number(form.amount),
         };
 
-        if (editingId) {
-            await axios.patch(`${API_URL}/discount/${editingId}`, payload);
-        } else {
-            await axios.post(`${API_URL}/discount`, payload);
+        try {
+            if (editingId) {
+                await axios.patch(`${API_URL}/discount/${editingId}`, payload);
+            } else {
+                await axios.post(`${API_URL}/discount`, payload);
+            }
+            resetForm();
+            notify({
+                type: "success",
+                title: editingId ? "Discount updated" : "Discount created",
+                message: "Discount saved successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Save failed",
+                message: error.response?.data?.message || "Failed to save discount.",
+            });
         }
-        resetForm();
-        load();
     };
 
     const handleEdit = (d) => {
@@ -83,8 +103,21 @@ function Discount() {
 
     const handleDelete = async (id) => {
         if (!window.confirm("Delete this discount?")) return;
-        await axios.delete(`${API_URL}/discount/${id}`);
-        load();
+        try {
+            await axios.delete(`${API_URL}/discount/${id}`);
+            notify({
+                type: "success",
+                title: "Discount deleted",
+                message: "Discount deleted successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Delete failed",
+                message: error.response?.data?.message || "Failed to delete discount.",
+            });
+        }
     };
 
     return (

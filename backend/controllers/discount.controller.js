@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { Discount } from "../models/discount.model.js";
+import { logActivity } from "../utils/activityLog.js";
 
 async function getAllDiscount(req, res) {
     try {
@@ -71,6 +72,15 @@ async function createDiscount(req, res) {
             storeId,
         });
 
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "create",
+            entityType: "discount",
+            entityId: discount._id,
+            message: `Discount created: ${discount.discount_code}`,
+        });
+
         return res
             .status(201)
             .json({ message: "Discount successfully created", discount });
@@ -105,6 +115,15 @@ async function updateDiscount(req, res) {
 
         await discount.save();
 
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "update",
+            entityType: "discount",
+            entityId: discount._id,
+            message: `Discount updated: ${discount.discount_code}`,
+        });
+
         return res.status(200).json({
             message: "Discount code updated successfully",
             discount,
@@ -131,6 +150,15 @@ async function deleteDiscount(req, res) {
         if (!discount) {
             return res.status(404).json({ message: "Discount not found" });
         }
+
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "delete",
+            entityType: "discount",
+            entityId: discount._id,
+            message: `Discount deleted: ${discount.discount_code}`,
+        });
 
         return res
             .status(200)

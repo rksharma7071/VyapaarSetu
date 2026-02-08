@@ -2,17 +2,21 @@ import { useEffect, useState, useMemo } from "react";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoSearch } from "react-icons/io5";
 import { Link, NavLink } from "react-router-dom";
-import { FaLaptop, FaRegUser } from "react-icons/fa";
+import { FaLaptop } from "react-icons/fa";
 import { TbReload, TbX } from "react-icons/tb";
 import { RxDashboard } from "react-icons/rx";
 import { BsBox } from "react-icons/bs";
 import { FiShoppingCart } from "react-icons/fi";
-import { AiOutlineFile, AiOutlinePercentage } from "react-icons/ai";
-import { TbUsersGroup } from "react-icons/tb";
+import { AiOutlinePercentage } from "react-icons/ai";
 import { IoSettingsOutline } from "react-icons/io5";
+import { BiCategoryAlt } from "react-icons/bi";
+import { MdOutlineBrandingWatermark, MdOutlinePointOfSale, MdOutlineAssignmentReturn, MdOutlineInventory2, MdOutlineWarningAmber, MdOutlineEventBusy, MdOutlinePeopleAlt, MdOutlineGroups, MdOutlineAdminPanelSettings, MdOutlineAssessment, MdOutlineHistory } from "react-icons/md";
+import { RiTruckLine, RiFileList3Line } from "react-icons/ri";
 import { handleRefresh } from "../data/refresh";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchStores, setSelectedStore } from "../store/storeSlice";
+import { clearCart } from "../store/cartSlice";
+import { clearPosOrder } from "../store/ordersSlice";
 import Input from "./UI/Input";
 import axios from "axios";
 import { API_URL } from "../utils/api";
@@ -31,12 +35,18 @@ function Header() {
     const selectedStore = stores.find((s) => s._id === selectedStoreId);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("pos_store_id");
+        localStorage.removeItem("refresh_token");
         if (axios?.defaults?.headers?.common?.Authorization) {
             delete axios.defaults.headers.common.Authorization;
+        }
+        try {
+            await axios.post(`${API_URL}/auth/logout`);
+        } catch {
+            // ignore logout errors
         }
         window.location.href = "/login";
     };
@@ -48,31 +58,47 @@ function Header() {
     useEffect(() => {
         if (!user?.id) return;
         if (user?.role === "admin") return setPermission({ admin: true });
-        axios
-            .get(`${API_URL}/user/permission/${user.id}`)
-            .then((res) => setPermission(res.data || {}))
-            .catch(() => setPermission({}));
+        let isMounted = true;
+        const fetchPermission = () => {
+            axios
+                .get(`${API_URL}/user/permission/${user.id}`)
+                .then((res) => {
+                    if (isMounted) setPermission(res.data || {});
+                })
+                .catch(() => {
+                    if (isMounted) setPermission({});
+                });
+        };
+        fetchPermission();
+        const interval = setInterval(fetchPermission, 60000);
+        const onFocus = () => fetchPermission();
+        window.addEventListener("focus", onFocus);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+            window.removeEventListener("focus", onFocus);
+        };
     }, [user]);
 
     const menuItems = [
         { label: "Dashboard", to: "/", icon: RxDashboard, perm: "readReport" },
         { label: "Products", to: "/products", icon: BsBox, perm: "readProduct" },
-        { label: "Categories", to: "/category", icon: BsBox, perm: "readProduct" },
-        { label: "Brands", to: "/brands", icon: BsBox, perm: "readProduct" },
+        { label: "Categories", to: "/category", icon: BiCategoryAlt, perm: "readProduct" },
+        { label: "Brands", to: "/brands", icon: MdOutlineBrandingWatermark, perm: "readProduct" },
         { label: "Orders", to: "/orders", icon: FiShoppingCart, perm: "readOrder" },
-        { label: "Sales", to: "/sales", icon: FiShoppingCart, perm: "readOrder" },
-        { label: "Invoices", to: "/invoices", icon: AiOutlineFile, perm: "readInvoice" },
+        { label: "Sales", to: "/sales", icon: MdOutlinePointOfSale, perm: "readOrder" },
         { label: "Discount", to: "/discount", icon: AiOutlinePercentage, perm: "readDiscount" },
-        { label: "Suppliers", to: "/suppliers", icon: TbUsersGroup, perm: "readSupplier" },
-        { label: "Purchase Orders", to: "/purchase-orders", icon: AiOutlineFile, perm: "readPurchaseOrder" },
-        { label: "Manage Stock", to: "/manage-stock", icon: BsBox, perm: "readInventory" },
-        { label: "Low Stock", to: "/low-stocks", icon: BsBox, perm: "readInventory" },
-        { label: "Expired", to: "/expired-products", icon: BsBox, perm: "readInventory" },
-        { label: "Returns", to: "/returns", icon: FiShoppingCart, perm: "readReturn" },
-        { label: "Customers", to: "/customers", icon: TbUsersGroup, perm: "readCustomer" },
-        { label: "Employee", to: "/employee", icon: FaRegUser, perm: "readUser" },
-        { label: "Role Permissions", to: "/role-permissions", icon: FaRegUser, perm: "admin" },
-        { label: "Reports", to: "/reports", icon: AiOutlineFile, perm: "readReport" },
+        { label: "Suppliers", to: "/suppliers", icon: RiTruckLine, perm: "readSupplier" },
+        { label: "Purchase Orders", to: "/purchase-orders", icon: RiFileList3Line, perm: "readPurchaseOrder" },
+        { label: "Manage Stock", to: "/manage-stock", icon: MdOutlineInventory2, perm: "readInventory" },
+        { label: "Low Stock", to: "/low-stocks", icon: MdOutlineWarningAmber, perm: "readInventory" },
+        { label: "Expired", to: "/expired-products", icon: MdOutlineEventBusy, perm: "readInventory" },
+        { label: "Returns", to: "/returns", icon: MdOutlineAssignmentReturn, perm: "readReturn" },
+        { label: "Customers", to: "/customers", icon: MdOutlinePeopleAlt, perm: "readCustomer" },
+        { label: "Employee", to: "/employee", icon: MdOutlineGroups, perm: "readUser" },
+        { label: "Role Permissions", to: "/role-permissions", icon: MdOutlineAdminPanelSettings, perm: "admin" },
+        { label: "Reports", to: "/reports", icon: MdOutlineAssessment, perm: "readReport" },
+        { label: "Activity Log", to: "/activity-log", icon: MdOutlineHistory, perm: "readReport" },
         { label: "Settings", to: "/settings", icon: IoSettingsOutline, perm: "readUser" },
     ];
 
@@ -103,7 +129,11 @@ function Header() {
                     <select
                         value={selectedStoreId}
                         onChange={(e) =>
-                            dispatch(setSelectedStore(e.target.value))
+                            (() => {
+                                dispatch(setSelectedStore(e.target.value));
+                                dispatch(clearCart());
+                                dispatch(clearPosOrder());
+                            })()
                         }
                         className="hidden sm:block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     >
@@ -134,24 +164,24 @@ function Header() {
                         </button>
                         {userMenuOpen && (
                             <div className="absolute right-0 top-12 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
-                                <Link
+                                {/* <Link
                                     to="/"
                                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                                 >
                                     Dashboard
-                                </Link>
-                                <Link
+                                </Link> */}
+                                {/* <Link
                                     to="/pos"
                                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                                 >
                                     POS
-                                </Link>
-                                <Link
+                                </Link> */}
+                                {/* <Link
                                     to="/settings"
                                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                                 >
                                     Settings
-                                </Link>
+                                </Link> */}
                                 <button
                                     onClick={handleLogout}
                                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"

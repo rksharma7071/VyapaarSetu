@@ -25,7 +25,6 @@ const orderSchema = new mongoose.Schema(
         orderNumber: {
             type: String,
             required: true,
-            unique: true,
             index: true,
         },
         storeId: {
@@ -75,6 +74,17 @@ const orderSchema = new mongoose.Schema(
             default: "paid",
         },
         paymentId: { type: String },
+        paymentRecordId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Payment",
+            default: null,
+        },
+        paymentMode: {
+            type: String,
+            enum: ["test", "live", "offline"],
+            default: "offline",
+        },
+        paymentDetails: { type: mongoose.Schema.Types.Mixed },
         status: {
             type: String,
             enum: ["completed", "cancelled", "refunded"],
@@ -86,6 +96,8 @@ const orderSchema = new mongoose.Schema(
     },
     { timestamps: true },
 );
+
+orderSchema.index({ storeId: 1, orderNumber: 1 }, { unique: true });
 
 const Order = mongoose.model("Order", orderSchema);
 

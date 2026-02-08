@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import axios from "axios";
+import { applyTheme, loadTheme } from "./utils/theme.js";
+import ApiLoader from "./components/ApiLoader.jsx";
+import AlertProvider from "./components/UI/AlertProvider.jsx";
 
 import "./index.css";
 import App from "./App.jsx";
@@ -32,6 +35,7 @@ import OrderById from "./pages/OrderById.jsx";
 import Suppliers from "./pages/Suppliers.jsx";
 import PurchaseOrders from "./pages/PurchaseOrders.jsx";
 import Returns from "./pages/Returns.jsx";
+import ActivityLog from "./pages/ActivityLog.jsx";
 
 // Auth
 import Login from "./pages/Authentication/Login.jsx";
@@ -46,12 +50,63 @@ import Verification from "./pages/Authentication/Verification.jsx";
 import POS from "./pages/POS.jsx";
 import Checkout from "./components/POS/Checkout.jsx";
 import Main from "./components/POS/Main.jsx";
+import PosOrders from "./components/POS/Orders.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Pricing from "./pages/Pricing.jsx";
 import StoreSetup from "./pages/StoreSetup.jsx";
 
 // Loaders
 import { getProductBySlug } from "./data/product.js";
+
+const api = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const token = localStorage.getItem("token");
+if (token) {
+  axios.defaults.headers.common.Authorization = `Bearer ${token}`;
+}
+
+let refreshPromise = null;
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const original = error.config || {};
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        return Promise.reject(error);
+      }
+      try {
+        if (!refreshPromise) {
+          refreshPromise = axios.post(`${api}/auth/refresh`, { refreshToken });
+        }
+        const refreshRes = await refreshPromise;
+        refreshPromise = null;
+        const newToken = refreshRes.data.token;
+        const newRefresh = refreshRes.data.refreshToken;
+        localStorage.setItem("token", newToken);
+        if (newRefresh) localStorage.setItem("refresh_token", newRefresh);
+        axios.defaults.headers.common.Authorization = `Bearer ${newToken}`;
+        original.headers = {
+          ...(original.headers || {}),
+          Authorization: `Bearer ${newToken}`,
+        };
+        return axios(original);
+      } catch (refreshError) {
+        refreshPromise = null;
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("refresh_token");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      }
+    }
+    return Promise.reject(error);
+  },
+);
 
 const router = createBrowserRouter([
   {
@@ -83,7 +138,6 @@ const router = createBrowserRouter([
 
       { path: "manage-stock", element: <ManageStock /> },
       { path: "sales", element: <Sales /> },
-      { path: "invoices", element: <Invoices /> },
       { path: "discount", element: <Discount /> },
       { path: "suppliers", element: <Suppliers /> },
       { path: "purchase-orders", element: <PurchaseOrders /> },
@@ -92,6 +146,7 @@ const router = createBrowserRouter([
       { path: "employee", element: <Employee /> },
       { path: "role-permissions", element: <RolePermissions /> },
       { path: "reports", element: <Reports /> },
+      { path: "activity-log", element: <ActivityLog /> },
       { path: "settings", element: <Settings /> },
         ],
       },
@@ -100,6 +155,7 @@ const router = createBrowserRouter([
         element: <Main />,
         children: [
           { index: true, element: <POS /> },
+          { path: "orders", element: <PosOrders /> },
           { path: "checkout", element: <Checkout /> },
         ],
       },
@@ -117,14 +173,15 @@ const router = createBrowserRouter([
   { path: "/verification", element: <Verification /> },
 ]);
 
+applyTheme(loadTheme());
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <Provider store={store}>
-      <RouterProvider router={router} ></RouterProvider>
+      <AlertProvider>
+        <ApiLoader />
+        <RouterProvider router={router} ></RouterProvider>
+      </AlertProvider>
     </Provider>
   </StrictMode >
 );
-const token = localStorage.getItem("token");
-if (token) {
-  axios.defaults.headers.common.Authorization = `Bearer ${token}`;
-}

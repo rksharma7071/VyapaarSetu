@@ -11,7 +11,7 @@ export async function getInventory(req, res) {
         const query = { storeId };
         if (productId) query.productId = productId;
         const items = await Inventory.find(query)
-            .populate("productId", "name sku price gstRate hsn")
+            .populate("productId", "name sku price gstRate hsn image")
             .sort({ updatedAt: -1 });
         res.json({ success: true, data: items });
     } catch (error) {
@@ -48,7 +48,7 @@ export async function getBatches(req, res) {
         const query = { storeId };
         if (productId) query.productId = productId;
         const batches = await InventoryBatch.find(query)
-            .populate("productId", "name sku")
+            .populate("productId", "name sku image")
             .sort({ expiryDate: 1, createdAt: 1 });
         res.json({ success: true, data: batches });
     } catch (error) {
@@ -137,7 +137,7 @@ export async function getLowStock(req, res) {
         const items = await Inventory.find({
             storeId,
             $expr: { $lte: ["$stockQty", "$reorderLevel"] },
-        }).populate("productId", "name sku");
+        }).populate("productId", "name sku image");
         res.json({ success: true, data: items });
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch low stock" });
@@ -155,7 +155,7 @@ export async function getExpiredStock(req, res) {
             storeId,
             expiryDate: { $lte: today },
             qty: { $gt: 0 },
-        }).populate("productId", "name sku");
+        }).populate("productId", "name sku image");
 
         res.json({ success: true, data: batches });
     } catch (error) {

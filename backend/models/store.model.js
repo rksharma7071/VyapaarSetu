@@ -14,12 +14,16 @@ const storeSchema = new mongoose.Schema(
         pincode: { type: String, trim: true },
         country: { type: String, default: "India" },
         isActive: { type: Boolean, default: true },
+        suspendedReason: { type: String, default: "" },
+        ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+        timezone: { type: String, default: "Asia/Kolkata" },
         subscriptionStatus: {
             type: String,
             enum: ["active", "inactive", "cancelled"],
             default: "inactive",
         },
         subscriptionEnd: { type: Date, default: null },
+        defaultTaxRate: { type: Number, default: 0, min: 0 },
     },
     { timestamps: true },
 );

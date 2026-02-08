@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function PurchaseOrders() {
     const storeId = useSelector((state) => state.stores.selectedStoreId);
@@ -13,6 +14,7 @@ function PurchaseOrders() {
     const [items, setItems] = useState([
         { productId: "", qtyOrdered: 1, costPrice: 0, taxRate: 0 },
     ]);
+    const { notify } = useAlert();
 
     const load = async () => {
         const [poRes, supRes, prodRes] = await Promise.all([
@@ -49,9 +51,22 @@ function PurchaseOrders() {
     };
 
     const create = async () => {
-        if (!supplierId) return alert("Select supplier");
-        if (!items.length || items.some((i) => !i.productId))
-            return alert("Add products");
+        if (!supplierId) {
+            notify({
+                type: "warning",
+                title: "Supplier required",
+                message: "Select a supplier.",
+            });
+            return;
+        }
+        if (!items.length || items.some((i) => !i.productId)) {
+            notify({
+                type: "warning",
+                title: "Products required",
+                message: "Add products to create a purchase order.",
+            });
+            return;
+        }
 
         const subtotal = items.reduce(
             (sum, i) => sum + Number(i.qtyOrdered) * Number(i.costPrice),
@@ -64,18 +79,31 @@ function PurchaseOrders() {
         );
         const grandTotal = subtotal + taxTotal;
 
-        await axios.post(`${API_URL}/purchase-order`, {
-            storeId,
-            supplierId,
-            items,
-            subtotal,
-            taxTotal,
-            discountTotal: 0,
-            grandTotal,
-        });
-        setSupplierId("");
-        setItems([{ productId: "", qtyOrdered: 1, costPrice: 0, taxRate: 0 }]);
-        load();
+        try {
+            await axios.post(`${API_URL}/purchase-order`, {
+                storeId,
+                supplierId,
+                items,
+                subtotal,
+                taxTotal,
+                discountTotal: 0,
+                grandTotal,
+            });
+            setSupplierId("");
+            setItems([{ productId: "", qtyOrdered: 1, costPrice: 0, taxRate: 0 }]);
+            notify({
+                type: "success",
+                title: "Purchase order created",
+                message: "Purchase order created successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: error.response?.data?.message || "Failed to create purchase order.",
+            });
+        }
     };
 
     return (

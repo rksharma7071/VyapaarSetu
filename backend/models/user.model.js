@@ -47,6 +47,9 @@ const userSchema = new mongoose.Schema(
         password: { type: String, required: true },
         name: { type: String },
         role: { type: String, default: "customer" },
+        isActive: { type: Boolean, default: true },
+        sessionId: { type: String, default: "" },
+        storeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Store" }],
         storeId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Store",
@@ -54,6 +57,7 @@ const userSchema = new mongoose.Schema(
         },
         otp: { type: String, default: false },
         otpExpiry: { type: Date, default: null },
+        otpVerifiedAt: { type: Date, default: null },
     },
     { timestamps: true },
 );

@@ -3,9 +3,9 @@ import Counter from "../models/counter.model.js";
 import Order from "../models/order.model.js";
 import Store from "../models/store.model.js";
 
-async function nextInvoiceNumber() {
+async function nextInvoiceNumber(storeId) {
     const counter = await Counter.findOneAndUpdate(
-        { name: "invoice" },
+        { name: "invoice", storeId },
         { $inc: { seq: 1 } },
         { new: true, upsert: true },
     );
@@ -69,7 +69,7 @@ export async function createInvoiceFromOrder(req, res) {
                 ? storeState.toLowerCase() !== customerState.toLowerCase()
                 : false;
 
-        const invoiceNumber = await nextInvoiceNumber();
+        const invoiceNumber = await nextInvoiceNumber(order.storeId);
         const { mapped, cgstTotal, sgstTotal, igstTotal } = buildTaxLines(
             order.items,
             isInterstate,
@@ -108,7 +108,9 @@ export async function getInvoices(req, res) {
     try {
         const storeId = req.user?.storeId;
         if (!storeId) return res.status(403).json({ message: "Store not linked" });
-        const invoices = await Invoice.find({ storeId }).sort({ createdAt: -1 });
+        const invoices = await Invoice.find({ storeId })
+            .populate("orderId", "orderNumber")
+            .sort({ createdAt: -1 });
         res.json({ success: true, data: invoices });
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch invoices" });
@@ -119,7 +121,10 @@ export async function getInvoiceById(req, res) {
     try {
         const storeId = req.user?.storeId;
         if (!storeId) return res.status(403).json({ message: "Store not linked" });
-        const invoice = await Invoice.findOne({ _id: req.params.id, storeId });
+        const invoice = await Invoice.findOne({ _id: req.params.id, storeId }).populate(
+            "orderId",
+            "orderNumber",
+        );
         if (!invoice) return res.status(404).json({ message: "Not found" });
         res.json({ success: true, data: invoice });
     } catch (error) {

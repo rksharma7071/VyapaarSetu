@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Employee() {
     const [users, setUsers] = useState([]);
@@ -18,6 +19,7 @@ function Employee() {
         role: "",
     });
     const [permission, setPermission] = useState(null);
+    const { notify } = useAlert();
 
     const load = async () => {
         const res = await axios.get(`${API_URL}/user`);
@@ -48,11 +50,26 @@ function Employee() {
     const canReadUser = permission?.admin || permission?.readUser;
 
     const create = async () => {
-        if (!form.name || !form.email || !form.password)
-            return alert("Fill name, email, password");
-        await axios.post(`${API_URL}/user`, form);
-        setForm({ name: "", email: "", password: "", role: "cashier" });
-        load();
+        if (!form.name || !form.email || !form.password) {
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "Fill name, email, and password.",
+            });
+            return;
+        }
+        try {
+            await axios.post(`${API_URL}/user`, form);
+            setForm({ name: "", email: "", password: "", role: "cashier" });
+            notify({ type: "success", title: "Employee added", message: "New employee created successfully." });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: error.response?.data?.message || "Failed to add employee.",
+            });
+        }
     };
 
     return (
@@ -149,10 +166,23 @@ function Employee() {
                                                             )
                                                         )
                                                             return;
-                                                        await axios.delete(
-                                                            `${API_URL}/user/${u._id}`,
-                                                        );
-                                                        load();
+                                                        try {
+                                                            await axios.delete(
+                                                                `${API_URL}/user/${u._id}`,
+                                                            );
+                                                            notify({
+                                                                type: "success",
+                                                                title: "Employee deleted",
+                                                                message: "Employee removed successfully.",
+                                                            });
+                                                            load();
+                                                        } catch (error) {
+                                                            notify({
+                                                                type: "error",
+                                                                title: "Delete failed",
+                                                                message: error.response?.data?.message || "Failed to delete employee.",
+                                                            });
+                                                        }
                                                     }}
                                                     className="rounded-lg border border-red-300 px-3 py-1 text-xs text-red-600"
                                                 >
@@ -216,16 +246,29 @@ function Employee() {
                         </select>
                         <button
                             onClick={async () => {
-                                await axios.patch(
-                                    `${API_URL}/user/${editing.id}`,
-                                    {
-                                        name: editing.name,
-                                        email: editing.email,
-                                        role: editing.role,
-                                    },
-                                );
-                                setEditing({ id: "", name: "", email: "", role: "" });
-                                load();
+                                try {
+                                    await axios.patch(
+                                        `${API_URL}/user/${editing.id}`,
+                                        {
+                                            name: editing.name,
+                                            email: editing.email,
+                                            role: editing.role,
+                                        },
+                                    );
+                                    setEditing({ id: "", name: "", email: "", role: "" });
+                                    notify({
+                                        type: "success",
+                                        title: "Employee updated",
+                                        message: "Employee details updated successfully.",
+                                    });
+                                    load();
+                                } catch (error) {
+                                    notify({
+                                        type: "error",
+                                        title: "Update failed",
+                                        message: error.response?.data?.message || "Failed to update employee.",
+                                    });
+                                }
                             }}
                             className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
                         >

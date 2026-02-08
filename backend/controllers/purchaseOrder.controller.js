@@ -5,9 +5,9 @@ import InventoryBatch from "../models/inventoryBatch.model.js";
 import { incrementInventory } from "../utils/inventory.js";
 import Supplier from "../models/supplier.model.js";
 
-async function nextPoNumber() {
+async function nextPoNumber(storeId) {
     const counter = await Counter.findOneAndUpdate(
-        { name: "purchase_order" },
+        { name: "purchase_order", storeId },
         { $inc: { seq: 1 } },
         { new: true, upsert: true },
     );
@@ -68,7 +68,7 @@ export async function createPurchaseOrder(req, res) {
             return res.status(400).json({ message: "Supplier not found" });
         }
 
-        const poNumber = await nextPoNumber();
+        const poNumber = await nextPoNumber(storeId);
         const po = await PurchaseOrder.create({
             poNumber,
             storeId,

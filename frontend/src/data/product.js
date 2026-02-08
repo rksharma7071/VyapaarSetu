@@ -18,7 +18,10 @@ const getProducts = async () => {
 const getProductBySlug = async ({ params }) => {
     try {
         const { slug } = params;
-        const response = await axios.get(`${api}/product/${slug}`);
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`${api}/product/${slug}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         return response.data.data;
     } catch (error) {
         console.error(error);

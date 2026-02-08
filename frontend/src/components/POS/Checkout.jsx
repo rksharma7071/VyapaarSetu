@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { setPosOrder, clearPosOrder } from "../../store/ordersSlice";
@@ -6,40 +6,128 @@ import { useDispatch, useSelector } from "react-redux";
 import Input from "../UI/Input";
 import Textarea from "../UI/Textarea";
 import { clearCart } from "../../store/cartSlice";
+import { useAlert } from "../UI/AlertProvider";
 
 function Checkout() {
     const navigate = useNavigate();
     const cart = useSelector((state) => state.cart.items);
     const storeId = useSelector((state) => state.stores.selectedStoreId);
+    const stores = useSelector((state) => state.stores.items);
+    const store = useMemo(
+        () => stores.find((s) => s._id === storeId),
+        [stores, storeId],
+    );
     const dispatch = useDispatch();
+    const { notify } = useAlert();
 
     const [customer, setCustomer] = useState({
         name: "",
         phone: "",
-        gstin: "",
-        state: "",
-        address: "",
     });
 
-    const [tax, setTax] = useState(5);
     const [discount, setDiscount] = useState(0);
+    const [discountCode, setDiscountCode] = useState("");
+    const [discountApplied, setDiscountApplied] = useState(false);
+    const [applyingDiscount, setApplyingDiscount] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState("cash");
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);
+
+    const round2 = (value) =>
+        Math.round((Number(value) + Number.EPSILON) * 100) / 100;
 
     const subtotal = useMemo(() => {
         return cart.reduce((sum, item) => sum + item.price * item.qty, 0);
     }, [cart]);
 
+    const taxRate = Number(store?.defaultTaxRate || 0);
+    const taxAmount = useMemo(() => {
+        return round2((subtotal * taxRate) / 100);
+    }, [subtotal, taxRate]);
+
     const total = useMemo(() => {
-        return subtotal + Number(tax) - Number(discount);
-    }, [subtotal, tax, discount]);
+        return subtotal + Number(taxAmount) - Number(discount);
+    }, [subtotal, taxAmount, discount]);
+
+    useEffect(() => {
+        if (!discountApplied) return;
+        setDiscount(0);
+        setDiscountApplied(false);
+        setDiscountCode("");
+        notify({
+            type: "info",
+            title: "Discount reset",
+            message: "Cart changed, please apply discount again.",
+            autoClose: 3500,
+        });
+    }, [subtotal, taxAmount]);
+
+    const handleApplyDiscount = async () => {
+        if (!discountCode.trim()) {
+            notify({
+                type: "warning",
+                title: "Enter code",
+                message: "Please enter a discount code.",
+            });
+            return;
+        }
+        try {
+            setApplyingDiscount(true);
+            const res = await axios.post(
+                `${import.meta.env.VITE_API_URL}/discount/apply`,
+                {
+                    code: discountCode.trim(),
+                    amount: subtotal + Number(taxAmount),
+                },
+            );
+            const amount = Number(res.data?.discountAmount || 0);
+            setDiscount(amount);
+            setDiscountApplied(true);
+            notify({
+                type: "success",
+                title: "Discount applied",
+                message: `Discount applied: ₹${amount}`,
+            });
+        } catch (err) {
+            notify({
+                type: "error",
+                title: "Invalid code",
+                message: err.response?.data?.message || "Failed to apply discount.",
+            });
+        } finally {
+            setApplyingDiscount(false);
+        }
+    };
+
+    const handleClearDiscount = () => {
+        setDiscount(0);
+        setDiscountApplied(false);
+        setDiscountCode("");
+        notify({
+            type: "info",
+            title: "Discount removed",
+            message: "Discount removed from this order.",
+            autoClose: 2000,
+        });
+    };
 
     const handleCreateOrder = async () => {
-        if (!cart.length) return alert("Cart is empty");
-        if (!customer.name || !customer.phone)
-            return alert("Customer name and phone required");
-        if (!storeId) return alert("Select a store first");
+        if (!cart.length) {
+            notify({ type: "warning", title: "Cart is empty", message: "Add items before placing an order." });
+            return;
+        }
+        if (!customer.name || !customer.phone) {
+            notify({
+                type: "warning",
+                title: "Customer details required",
+                message: "Customer name and phone are required.",
+            });
+            return;
+        }
+        if (!storeId) {
+            notify({ type: "warning", title: "Store missing", message: "Select a store first." });
+            return;
+        }
 
         const orderPayload = {
             customer,
@@ -51,7 +139,6 @@ function Checkout() {
                 totalPrice: item.price * item.qty,
             })),
             subtotal,
-            tax,
             discount,
             total,
             paymentMethod,
@@ -69,6 +156,7 @@ function Checkout() {
             );
             const customerId = customerRes.data.data._id;
 
+            const idempotencyKey = crypto.randomUUID();
             const orderRes = await axios.post(`${import.meta.env.VITE_API_URL}/order`, {
                 storeId,
                 customerId,
@@ -80,6 +168,8 @@ function Checkout() {
                 discount,
                 paymentMethod,
                 notes,
+            }, {
+                headers: { "Idempotency-Key": idempotencyKey },
             });
 
             const createdOrder = orderRes.data.data;
@@ -115,7 +205,11 @@ function Checkout() {
                                 orderId: createdOrder._id,
                             },
                         );
-                        alert("Payment successful");
+                        notify({
+                            type: "success",
+                            title: "Payment successful",
+                            message: "Order completed successfully.",
+                        });
                         dispatch(clearCart());
                         dispatch(clearPosOrder());
                         navigate("/pos");
@@ -127,7 +221,11 @@ function Checkout() {
                 return;
             }
 
-            alert("Order created successfully");
+            notify({
+                type: "success",
+                title: "Order created",
+                message: "Order completed successfully.",
+            });
             dispatch(clearCart());
             dispatch(clearPosOrder());
             navigate("/pos");
@@ -152,12 +250,21 @@ function Checkout() {
                     "pos_offline_orders",
                     JSON.stringify(pending),
                 );
-                alert("Order saved offline. It will sync when online.");
+                notify({
+                    type: "info",
+                    title: "Saved offline",
+                    message: "Order saved offline. It will sync when online.",
+                    autoClose: 5000,
+                });
                 dispatch(clearCart());
                 dispatch(clearPosOrder());
                 navigate("/pos");
             } else {
-                alert(err.response?.data?.message || "Checkout failed");
+                notify({
+                    type: "error",
+                    title: "Checkout failed",
+                    message: err.response?.data?.message || "Checkout failed",
+                });
             }
         } finally {
             setLoading(false);
@@ -174,11 +281,6 @@ function Checkout() {
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <Input name="name" value={customer.name} placeholder="Customer Name" onChange={(e) => setCustomer({ ...customer, name: e.target.value })} />
                     <Input type="tel" name="phone" value={customer.phone} placeholder="Phone Number" onChange={(e) => setCustomer({ ...customer, phone: e.target.value })} />
-                    <Input name="gstin" value={customer.gstin} placeholder="GSTIN (optional)" onChange={(e) => setCustomer({ ...customer, gstin: e.target.value })} />
-                    <Input name="state" value={customer.state} placeholder="State (for GST)" onChange={(e) => setCustomer({ ...customer, state: e.target.value })} />
-                </div>
-                <div className="mt-3">
-                    <Textarea placeholder="Address (optional)" onChange={(e) => setCustomer({ ...customer, address: e.target.value })} value={customer.address} />
                 </div>
             </div>
 
@@ -193,19 +295,42 @@ function Checkout() {
                     </div>
 
                     <div className="flex justify-between">
-                        <span>Tax</span>
-                        <Input value={tax} onChange={(e) => setTax(e.target.value)} className={"!w-24"} />
+                        <span>Tax ({taxRate}%)</span>
+                        <span>₹{taxAmount}</span>
                     </div>
 
                     <div className="flex justify-between">
                         <span>Discount</span>
-                        {/* <input
-                            type="number"
-                            className="w-24 rounded border border-gray-300 p-1 text-right"
-                            value={discount}
-                            onChange={(e) => setDiscount(e.target.value)}
-                        /> */}
-                        <Input value={discount} onChange={(e) => setDiscount(e.target.value)} className={"!w-24"} />
+                        <Input value={discount} readOnly className={"!w-24"} />
+                    </div>
+
+                    <div className="flex flex-col gap-2 pt-2">
+                        <div className="text-xs text-gray-500">Discount Code</div>
+                        <div className="flex gap-2">
+                            <Input
+                                value={discountCode}
+                                onChange={(e) => setDiscountCode(e.target.value)}
+                                placeholder="Enter code"
+                            />
+                            {!discountApplied ? (
+                                <button
+                                    type="button"
+                                    onClick={handleApplyDiscount}
+                                    disabled={applyingDiscount}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                                >
+                                    {applyingDiscount ? "Applying..." : "Apply"}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleClearDiscount}
+                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                                >
+                                    Remove
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex justify-between font-semibold text-lg">

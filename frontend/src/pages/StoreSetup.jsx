@@ -3,6 +3,7 @@ import axios from "axios";
 import { API_URL } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function StoreSetup() {
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ function StoreSetup() {
         gstin: "",
     });
     const [loading, setLoading] = useState(false);
+    const { notify } = useAlert();
 
     if (!token || !user) {
         return (
@@ -36,7 +38,11 @@ function StoreSetup() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!form.name || !form.code) {
-            alert("Store name and code are required");
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "Store name and code are required.",
+            });
             return;
         }
         try {
@@ -49,9 +55,18 @@ function StoreSetup() {
 
             const updatedUser = { ...user, storeId, subscriptionActive: false };
             localStorage.setItem("user", JSON.stringify(updatedUser));
+            notify({
+                type: "success",
+                title: "Store created",
+                message: "Store created successfully.",
+            });
             navigate("/pricing");
         } catch (error) {
-            alert("Store setup failed");
+            notify({
+                type: "error",
+                title: "Store setup failed",
+                message: error.response?.data?.message || "Store setup failed.",
+            });
         } finally {
             setLoading(false);
         }

@@ -7,8 +7,10 @@ import {
     decreaseQty,
 } from "../store/cartSlice.js";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 function POS() {
     const dispatch = useDispatch();
+    const { notify } = useAlert();
 
     const { products } = useSelector((state) => state.products);
     // const { addToCart, setCart } = useOutletContext();
@@ -16,21 +18,26 @@ function POS() {
     const [activeCategory, setActiveCategory] = useState("All");
     const [scanValue, setScanValue] = useState("");
 
+    const activeProducts = useMemo(
+        () => products.filter((p) => p?.isActive),
+        [products],
+    );
+
     const categories = useMemo(() => {
-        const unique = new Set(products.map((p) => p.category));
+        const unique = new Set(activeProducts.map((p) => p.category));
         return ["All", ...unique];
-    }, [products]);
+    }, [activeProducts]);
 
     const filteredProducts = useMemo(() => {
-        if (activeCategory === "All") return products;
-        return products.filter((p) => p.category === activeCategory);
-    }, [products, activeCategory]);
+        if (activeCategory === "All") return activeProducts;
+        return activeProducts.filter((p) => p.category === activeCategory);
+    }, [activeProducts, activeCategory]);
 
     const handleScan = (e) => {
         if (e.key !== "Enter") return;
         const value = scanValue.trim().toLowerCase();
         if (!value) return;
-        const match = products.find(
+        const match = activeProducts.find(
             (p) =>
                 p.sku?.toLowerCase() === value ||
                 p.slug?.toLowerCase() === value ||
@@ -39,7 +46,11 @@ function POS() {
         if (match) {
             dispatch(addToCart(match));
         } else {
-            alert("Product not found");
+            notify({
+                type: "warning",
+                title: "Product not found",
+                message: "Try a different barcode or SKU.",
+            });
         }
         setScanValue("");
     };

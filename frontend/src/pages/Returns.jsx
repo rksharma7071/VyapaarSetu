@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Returns() {
     const storeId = useSelector((state) => state.stores.selectedStoreId);
@@ -16,6 +17,7 @@ function Returns() {
         unitPrice: 0,
         refundMethod: "cash",
     });
+    const { notify } = useAlert();
 
     const load = async () => {
         const [retRes, orderRes, prodRes] = await Promise.all([
@@ -40,102 +42,138 @@ function Returns() {
             <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
                 <div className="font-semibold">Create Return</div>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-                    <select
-                        value={form.orderId}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, orderId: e.target.value }))
-                        }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    >
-                        <option value="">Select order</option>
-                        {orders.map((o) => (
-                            <option key={o._id} value={o._id}>
-                                {o.orderNumber}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        value={form.productId}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, productId: e.target.value }))
-                        }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    >
-                        <option value="">Select product</option>
-                        {products.map((p) => (
-                            <option key={p._id} value={p._id}>
-                                {p.name}
-                            </option>
-                        ))}
-                    </select>
-                    <Input
-                        type="number"
-                        value={form.qty}
-                        onChange={(e) =>
-                            setForm((f) => ({ ...f, qty: e.target.value }))
-                        }
-                        placeholder="Qty"
-                    />
-                    <Input
-                        type="number"
-                        value={form.unitPrice}
-                        onChange={(e) =>
-                            setForm((f) => ({
-                                ...f,
-                                unitPrice: e.target.value,
-                            }))
-                        }
-                        placeholder="Unit Price"
-                    />
-                    <select
-                        value={form.refundMethod}
-                        onChange={(e) =>
-                            setForm((f) => ({
-                                ...f,
-                                refundMethod: e.target.value,
-                            }))
-                        }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    >
-                        <option value="cash">Cash</option>
-                        <option value="card">Card</option>
-                        <option value="upi">UPI</option>
-                        <option value="razorpay">Razorpay</option>
-                    </select>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600">Order</label>
+                        <select
+                            value={form.orderId}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, orderId: e.target.value }))
+                            }
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">Select order</option>
+                            {orders.map((o) => (
+                                <option key={o._id} value={o._id}>
+                                    {o.orderNumber}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600">Product</label>
+                        <select
+                            value={form.productId}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, productId: e.target.value }))
+                            }
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="">Select product</option>
+                            {products.map((p) => (
+                                <option key={p._id} value={p._id}>
+                                    {p.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600">Quantity</label>
+                        <Input
+                            type="text"
+                            value={form.qty}
+                            onChange={(e) =>
+                                setForm((f) => ({ ...f, qty: e.target.value }))
+                            }
+                            placeholder="Qty"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600">Unit Price</label>
+                        <Input
+                            type="text"
+                            value={form.unitPrice}
+                            onChange={(e) =>
+                                setForm((f) => ({
+                                    ...f,
+                                    unitPrice: e.target.value,
+                                }))
+                            }
+                            placeholder="Unit Price"
+                        />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-xs text-gray-600">Refund Method</label>
+                        <select
+                            value={form.refundMethod}
+                            onChange={(e) =>
+                                setForm((f) => ({
+                                    ...f,
+                                    refundMethod: e.target.value,
+                                }))
+                            }
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                            <option value="cash">Cash</option>
+                            <option value="card">Card</option>
+                            <option value="upi">UPI</option>
+                            <option value="razorpay">Razorpay</option>
+                        </select>
+                    </div>
                 </div>
                 <button
                     onClick={async () => {
-                        if (!form.orderId || !form.productId)
-                            return alert("Order and product required");
+                        if (!form.orderId || !form.productId) {
+                            notify({
+                                type: "warning",
+                                title: "Missing fields",
+                                message: "Order and product required.",
+                            });
+                            return;
+                        }
                         const total = Number(form.qty) * Number(form.unitPrice);
-                        await axios.post(`${API_URL}/return`, {
-                            orderId: form.orderId,
-                            items: [
-                                {
-                                    productId: form.productId,
-                                    name:
-                                        products.find((p) => p._id === form.productId)
-                                            ?.name || "",
-                                    qty: Number(form.qty),
-                                    unitPrice: Number(form.unitPrice),
-                                    taxableValue: total,
-                                    cgst: 0,
-                                    sgst: 0,
-                                    igst: 0,
-                                    total,
-                                },
-                            ],
-                            refundMethod: form.refundMethod,
-                            refundAmount: total,
-                        });
-                        setForm({
-                            orderId: "",
-                            productId: "",
-                            qty: 1,
-                            unitPrice: 0,
-                            refundMethod: "cash",
-                        });
-                        load();
+                        try {
+                            await axios.post(`${API_URL}/return`, {
+                                orderId: form.orderId,
+                                items: [
+                                    {
+                                        productId: form.productId,
+                                        name:
+                                            products.find((p) => p._id === form.productId)
+                                                ?.name || "",
+                                        qty: Number(form.qty),
+                                        unitPrice: Number(form.unitPrice),
+                                        taxableValue: total,
+                                        cgst: 0,
+                                        sgst: 0,
+                                        igst: 0,
+                                        total,
+                                    },
+                                ],
+                                refundMethod: form.refundMethod,
+                                refundAmount: total,
+                            });
+                            setForm({
+                                orderId: "",
+                                productId: "",
+                                qty: 1,
+                                unitPrice: 0,
+                                refundMethod: "cash",
+                            });
+                            notify({
+                                type: "success",
+                                title: "Return processed",
+                                message: "Return processed successfully.",
+                            });
+                            load();
+                        } catch (error) {
+                            notify({
+                                type: "error",
+                                title: "Return failed",
+                                message:
+                                    error.response?.data?.message ||
+                                    "Failed to process return.",
+                            });
+                        }
                     }}
                     className="rounded-lg bg-primary px-4 py-2 text-sm text-white"
                 >

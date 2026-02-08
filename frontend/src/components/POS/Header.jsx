@@ -6,24 +6,59 @@ import { RiResetRightFill } from "react-icons/ri";
 import { TiShoppingCart } from "react-icons/ti";
 import { useMemo, useState } from "react";
 import { FaLaptop } from "react-icons/fa";
+import { useDispatch } from "react-redux";
+import { clearCart } from "../../store/cartSlice";
+import { clearPosOrder } from "../../store/ordersSlice";
+import axios from "axios";
 
 function Header() {
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const user = useMemo(
         () => JSON.parse(localStorage.getItem("user") || "null"),
         [],
     );
     const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(
+        Boolean(document.fullscreenElement),
+    );
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         localStorage.removeItem("pos_store_id");
+        localStorage.removeItem("refresh_token");
         if (window?.axios?.defaults?.headers?.common?.Authorization) {
             delete window.axios.defaults.headers.common.Authorization;
         }
+        try {
+            await axios.post(`${import.meta.env.VITE_API_URL}/auth/logout`);
+        } catch {
+            // ignore logout errors
+        }
         navigate("/login");
+    };
+
+    const handleResetOrder = () => {
+        if (!window.confirm("Reset current order?")) return;
+        dispatch(clearCart());
+        dispatch(clearPosOrder());
+        navigate("/pos");
+    };
+
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement) {
+                await document.documentElement.requestFullscreen();
+                setIsFullscreen(true);
+                return;
+            }
+            await document.exitFullscreen();
+            setIsFullscreen(false);
+        } catch (error) {
+            console.error("Fullscreen error:", error);
+        }
     };
 
     return (
@@ -54,19 +89,28 @@ function Header() {
                         <FaLaptop />
                         POS
                     </Link>
-                    <button className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90">
+                    <button
+                        onClick={() => navigate("/pos/orders")}
+                        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90"
+                    >
                         <TiShoppingCart className="text-lg" />
                         Orders
                     </button>
 
-                    <button className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <button
+                        onClick={handleResetOrder}
+                        className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
                         <RiResetRightFill className="text-lg" />
                         Reset
                     </button>
 
-                    <button className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <button
+                        onClick={toggleFullscreen}
+                        className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
                         <GoScreenFull className="text-lg" />
-                        Full Screen
+                        {isFullscreen ? "Exit Full Screen" : "Full Screen"}
                     </button>
 
                     <div className="mx-2 h-6 w-px bg-gray-300" />
@@ -98,18 +142,18 @@ function Header() {
                         </button>
                         {userMenuOpen && (
                             <div className="absolute right-0 top-12 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
-                                <Link
+                                {/* <Link
                                     to="/pos"
                                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                                 >
                                     POS
-                                </Link>
-                                <Link
+                                </Link> */}
+                                {/* <Link
                                     to="/orders"
                                     className="block px-4 py-2 text-sm hover:bg-gray-50"
                                 >
                                     Orders
-                                </Link>
+                                </Link> */}
                                 <Link
                                     to="/"
                                     className="block px-4 py-2 text-sm hover:bg-gray-50"
@@ -131,19 +175,28 @@ function Header() {
                 <div className="md:hidden border-t border-gray-200 bg-white px-4 py-3">
                     <div className="grid grid-cols-2 gap-3">
 
-                        <button className="flex items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-semibold text-white">
+                        <button
+                            onClick={() => navigate("/pos/orders")}
+                            className="flex items-center justify-center gap-2 rounded-lg bg-primary py-2 text-sm font-semibold text-white"
+                        >
                             <TiShoppingCart />
                             Orders
                         </button>
 
-                        <button className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2 text-sm">
+                        <button
+                            onClick={handleResetOrder}
+                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2 text-sm"
+                        >
                             <RiResetRightFill />
                             Reset
                         </button>
 
-                        <button className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2 text-sm">
+                        <button
+                            onClick={toggleFullscreen}
+                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2 text-sm"
+                        >
                             <GoScreenFull />
-                            Full Screen
+                            {isFullscreen ? "Exit Full Screen" : "Full Screen"}
                         </button>
 
                         <Link

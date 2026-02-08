@@ -3,6 +3,26 @@ import cloudinary from "../config/cloudinary.js";
 import Product from "../models/product.model.js";
 import Inventory from "../models/inventory.model.js";
 import Category from "../models/category.model.js";
+import { logActivity } from "../utils/activityLog.js";
+
+const round2 = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+
+async function ensureUniqueSku(storeId, sku, excludeId = null) {
+    if (!sku) return sku;
+    let candidate = sku;
+    let counter = 1;
+    // Ensure unique per store
+    while (true) {
+        const existing = await Product.findOne({
+            storeId,
+            sku: candidate,
+            ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+        }).lean();
+        if (!existing) return candidate;
+        candidate = `${sku}-${counter}`;
+        counter += 1;
+    }
+}
 
 export const getAllProducts = async (req, res) => {
     try {
@@ -14,8 +34,15 @@ export const getAllProducts = async (req, res) => {
         const limit = parseInt(req.query.limit) || 50;
         const skip = (page - 1) * limit;
 
+        const includeInactive = String(req.query.includeInactive || "") === "true";
+        const baseQuery = {
+            storeId,
+            isDeleted: { $ne: true },
+            ...(includeInactive ? {} : { isActive: { $ne: false } }),
+        };
+
         const [products, total] = await Promise.all([
-            Product.find({ storeId })
+            Product.find(baseQuery)
                 .select(
                     "_id slug name sku description type category categoryId brandId price taxRate gstRate hsn trackStock stockQty unit image isActive",
                 )
@@ -23,7 +50,7 @@ export const getAllProducts = async (req, res) => {
                 .skip(skip)
                 .limit(limit)
                 .exec(),
-            Product.countDocuments({ storeId }),
+            Product.countDocuments(baseQuery),
         ]);
 
         const inventory = await Inventory.find({ storeId }).lean();
@@ -59,7 +86,18 @@ export const getProductBySlug = async (req, res) => {
         if (!storeId) {
             return res.status(403).json({ message: "Store not linked" });
         }
-        const product = await Product.findOne({ slug, storeId });
+        const product = await Product.findOne({
+            slug,
+            storeId,
+            isDeleted: { $ne: true },
+        }).lean();
+        if (product?._id) {
+            const inventory = await Inventory.findOne({
+                storeId,
+                productId: product._id,
+            }).lean();
+            product.stockQty = inventory?.stockQty ?? product.stockQty ?? 0;
+        }
         return res.status(200).json({
             success: true,
             data: product,
@@ -105,9 +143,9 @@ export const createProduct = async (req, res) => {
             });
         }
 
-        const parsedPrice = Number(price);
-        const parsedTaxRate = Number(taxRate ?? 0);
-        const parsedGstRate = Number(gstRate ?? parsedTaxRate);
+        const parsedPrice = round2(price);
+        const parsedTaxRate = round2(taxRate ?? 0);
+        const parsedGstRate = round2(gstRate ?? parsedTaxRate);
         const parsedStockQty = Number(stockQty ?? 0);
 
         // ✅ Image already uploaded by Multer
@@ -146,10 +184,11 @@ export const createProduct = async (req, res) => {
             }
         }
 
+        const safeSku = await ensureUniqueSku(storeId, sku || "");
         const product = await Product.create({
             slug,
             name,
-            sku,
+            sku: safeSku || undefined,
             description,
             type,
             category: resolvedCategoryName,
@@ -173,6 +212,15 @@ export const createProduct = async (req, res) => {
             { $setOnInsert: { stockQty: parsedStockQty } },
             { upsert: true, new: true },
         );
+
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "create",
+            entityType: "product",
+            entityId: product._id,
+            message: `Product created: ${product.name}`,
+        });
 
         return res.status(201).json({
             success: true,
@@ -216,7 +264,11 @@ export const updateProduct = async (req, res) => {
             newSlug,
         } = req.body;
 
-        const product = await Product.findOne({ slug, storeId });
+        const product = await Product.findOne({
+            slug,
+            storeId,
+            isDeleted: { $ne: true },
+        });
 
         if (!product) {
             return res.status(404).json({
@@ -238,12 +290,12 @@ export const updateProduct = async (req, res) => {
         }
 
         // 🔢 Parse numeric fields
-        const parsedPrice = price !== undefined ? Number(price) : product.price;
+        const parsedPrice = price !== undefined ? round2(price) : product.price;
 
         const parsedTaxRate =
-            taxRate !== undefined ? Number(taxRate) : product.taxRate;
+            taxRate !== undefined ? round2(taxRate) : product.taxRate;
         const parsedGstRate =
-            gstRate !== undefined ? Number(gstRate) : product.gstRate;
+            gstRate !== undefined ? round2(gstRate) : product.gstRate;
 
         const parsedStockQty =
             stockQty !== undefined ? Number(stockQty) : product.stockQty;
@@ -262,7 +314,9 @@ export const updateProduct = async (req, res) => {
 
         // ✏️ Update fields (partial update)
         product.name = name ?? product.name;
-        product.sku = sku ?? product.sku;
+        if (sku !== undefined) {
+            product.sku = await ensureUniqueSku(storeId, sku, product._id);
+        }
         product.description = description ?? product.description;
         product.type = type ?? product.type;
         product.category = category ?? product.category;
@@ -286,6 +340,23 @@ export const updateProduct = async (req, res) => {
 
         await product.save();
 
+        if (stockQty !== undefined) {
+            await Inventory.findOneAndUpdate(
+                { storeId, productId: product._id },
+                { $set: { stockQty: isNaN(parsedStockQty) ? 0 : parsedStockQty } },
+                { upsert: true, new: true },
+            );
+        }
+
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "update",
+            entityType: "product",
+            entityId: product._id,
+            message: `Product updated: ${product.name}`,
+        });
+
         return res.status(200).json({
             success: true,
             message: "Product updated successfully",
@@ -308,7 +379,11 @@ export const deleteProduct = async (req, res) => {
         if (!storeId) {
             return res.status(403).json({ message: "Store not linked" });
         }
-        const product = await Product.findOne({ slug, storeId });
+        const product = await Product.findOne({
+            slug,
+            storeId,
+            isDeleted: { $ne: true },
+        });
 
         if (!product) {
             return res.status(404).json({
@@ -344,7 +419,18 @@ export const deleteProduct = async (req, res) => {
             );
         }
 
-        await Product.deleteOne({ slug });
+        product.isDeleted = true;
+        product.isActive = false;
+        await product.save();
+
+        await logActivity({
+            storeId,
+            userId: req.user?.id,
+            action: "soft_delete",
+            entityType: "product",
+            entityId: product._id,
+            message: `Product deleted: ${product.name}`,
+        });
 
         return res.status(200).json({
             success: true,

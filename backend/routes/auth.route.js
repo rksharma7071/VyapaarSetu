@@ -8,13 +8,21 @@ import {
     handleAuthRequestOTP,
     handleAuthVerifyOTP,
     handleAuthResetPassword,
+    handleAuthRefresh,
+    handleAuthLogout,
 } from "../controllers/auth.controller.js";
+import authMiddleware from "../middlewares/authentication.js";
+import rateLimit from "../middlewares/rateLimit.js";
 
-router.route("/signup").post(handleAuthSignUp);
-router.route("/login").post(handleAuthLogin);
-router.route("/change-password").post(handleAuthChangePassword);
-router.route("/request-otp").post(handleAuthRequestOTP);
-router.route("/verify-otp").post(handleAuthVerifyOTP);
-router.route("/reset-password").post(handleAuthResetPassword);
+const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 20 });
+
+router.route("/signup").post(authLimiter, handleAuthSignUp);
+router.route("/login").post(authLimiter, handleAuthLogin);
+router.route("/change-password").post(authLimiter, handleAuthChangePassword);
+router.route("/request-otp").post(authLimiter, handleAuthRequestOTP);
+router.route("/verify-otp").post(authLimiter, handleAuthVerifyOTP);
+router.route("/reset-password").post(authLimiter, handleAuthResetPassword);
+router.route("/refresh").post(handleAuthRefresh);
+router.route("/logout").post(authMiddleware, handleAuthLogout);
 
 export default router;

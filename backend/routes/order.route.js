@@ -8,13 +8,19 @@ import {
 } from "../controllers/order.contoller.js";
 import authMiddleware from "../middlewares/authentication.js";
 import authorizePermission from "../middlewares/authorizePermission.js";
+import { idempotencyMiddleware } from "../middlewares/idempotency.js";
 
 const router = express.Router();
 
 router
     .route("/")
     .get(authMiddleware, authorizePermission("readOrder"), getAllOrder)
-    .post(authMiddleware, authorizePermission("createOrder"), createOrder);
+    .post(
+        authMiddleware,
+        authorizePermission("createOrder"),
+        idempotencyMiddleware,
+        createOrder,
+    );
 
 router
     .route("/:id")

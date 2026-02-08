@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaApple, FaFacebook, FaGoogle } from "react-icons/fa";
 import axios from "axios";
 import Input from "../../components/UI/Input";
+import { useAlert } from "../../components/UI/AlertProvider";
 
 function Login() {
     const navigate = useNavigate();
@@ -16,6 +17,7 @@ function Login() {
     });
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const { notify } = useAlert();
 
     const handleShowPassword = () => {
         setShowPassword(prev => !prev);
@@ -34,7 +36,11 @@ function Login() {
         e.preventDefault();
 
         if (!login.email || !login.password) {
-            alert("Email and Password are required.");
+            notify({
+                type: "warning",
+                title: "Missing credentials",
+                message: "Email and password are required.",
+            });
             return;
         }
 
@@ -43,6 +49,9 @@ function Login() {
 
             console.log("Login Data: ", data);
             localStorage.setItem("token", data.token);
+            if (data.refreshToken) {
+                localStorage.setItem("refresh_token", data.refreshToken);
+            }
             localStorage.setItem("user", JSON.stringify(data.user));
             axios.defaults.headers.common.Authorization = `Bearer ${data.token}`;
 
@@ -68,7 +77,11 @@ function Login() {
                 "Login failed";
 
             console.error("Login Error:", status, message);
-            alert(message);
+            notify({
+                type: "error",
+                title: "Login failed",
+                message,
+            });
         }
     }
 

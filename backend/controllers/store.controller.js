@@ -34,7 +34,10 @@ export async function createStore(req, res) {
         if (req.user?.storeId) {
             return res.status(400).json({ message: "Store already linked" });
         }
-        const store = await Store.create(req.body);
+        const store = await Store.create({
+            ...req.body,
+            ownerId: req.user?.id || null,
+        });
         res.status(201).json({ success: true, data: store });
     } catch (error) {
         res.status(500).json({ message: "Failed to create store" });
@@ -65,11 +68,52 @@ export async function deleteStore(req, res) {
         if (String(req.params.id) !== String(storeId)) {
             return res.status(403).json({ message: "Forbidden" });
         }
-        const store = await Store.findByIdAndDelete(req.params.id);
+        const store = await Store.findByIdAndUpdate(
+            req.params.id,
+            { isActive: false, subscriptionStatus: "inactive" },
+            { new: true },
+        );
         if (!store) return res.status(404).json({ message: "Store not found" });
-        res.json({ success: true, message: "Store deleted" });
+        res.json({ success: true, message: "Store suspended" });
     } catch (error) {
         res.status(500).json({ message: "Failed to delete store" });
+    }
+}
+
+export async function transferStoreOwnership(req, res) {
+    try {
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ message: "Admin access only" });
+        }
+        const { id } = req.params;
+        const { ownerId } = req.body;
+        if (!ownerId) return res.status(400).json({ message: "ownerId required" });
+        const store = await Store.findByIdAndUpdate(
+            id,
+            { ownerId },
+            { new: true },
+        );
+        if (!store) return res.status(404).json({ message: "Store not found" });
+        res.json({ success: true, data: store });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to transfer ownership" });
+    }
+}
+
+export async function restoreStore(req, res) {
+    try {
+        if (req.user?.role !== "admin") {
+            return res.status(403).json({ message: "Admin access only" });
+        }
+        const store = await Store.findByIdAndUpdate(
+            req.params.id,
+            { isActive: true },
+            { new: true },
+        );
+        if (!store) return res.status(404).json({ message: "Store not found" });
+        res.json({ success: true, data: store });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to restore store" });
     }
 }
 

@@ -41,6 +41,7 @@ const productSchema = new mongoose.Schema(
         image: { type: String },
         publicId: { type: String },
         isActive: { type: Boolean, default: true, index: true },
+        isDeleted: { type: Boolean, default: false, index: true },
     },
     {
         timestamps: true,

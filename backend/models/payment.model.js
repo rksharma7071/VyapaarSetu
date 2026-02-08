@@ -37,6 +37,18 @@ const paymentSchema = new mongoose.Schema(
             unique: true,
             sparse: true,
         },
+        gatewayOrderId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        gatewaySignature: { type: String },
+        gatewayPayload: { type: mongoose.Schema.Types.Mixed },
+        mode: {
+            type: String,
+            enum: ["test", "live", "offline"],
+            default: "offline",
+        },
 
         currency: {
             type: String,

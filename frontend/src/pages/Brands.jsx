@@ -3,12 +3,14 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Brands() {
     const storeId = useSelector((state) => state.stores.selectedStoreId);
     const [items, setItems] = useState([]);
     const [name, setName] = useState("");
     const [slug, setSlug] = useState("");
+    const { notify } = useAlert();
 
     const load = async () => {
         const res = await axios.get(
@@ -22,15 +24,35 @@ function Brands() {
     }, [storeId]);
 
     const create = async () => {
-        if (!name || !slug) return alert("Name and slug required");
-        await axios.post(`${API_URL}/brand`, {
-            name,
-            slug,
-            storeId,
-        });
-        setName("");
-        setSlug("");
-        load();
+        if (!name || !slug) {
+            notify({
+                type: "warning",
+                title: "Missing fields",
+                message: "Name and slug required.",
+            });
+            return;
+        }
+        try {
+            await axios.post(`${API_URL}/brand`, {
+                name,
+                slug,
+                storeId,
+            });
+            setName("");
+            setSlug("");
+            notify({
+                type: "success",
+                title: "Brand added",
+                message: "Brand created successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: error.response?.data?.message || "Failed to create brand.",
+            });
+        }
     };
 
     return (

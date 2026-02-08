@@ -3,6 +3,7 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { API_URL } from "../utils/api";
 import Input from "../components/UI/Input";
+import { useAlert } from "../components/UI/AlertProvider";
 
 function Suppliers() {
     const storeId = useSelector((state) => state.stores.selectedStoreId);
@@ -14,6 +15,7 @@ function Suppliers() {
         email: "",
         state: "",
     });
+    const { notify } = useAlert();
 
     const load = async () => {
         const res = await axios.get(
@@ -27,13 +29,33 @@ function Suppliers() {
     }, [storeId]);
 
     const create = async () => {
-        if (!form.name) return alert("Supplier name required");
-        await axios.post(`${API_URL}/supplier`, {
-            ...form,
-            storeId,
-        });
-        setForm({ name: "", gstin: "", phone: "", email: "", state: "" });
-        load();
+        if (!form.name) {
+            notify({
+                type: "warning",
+                title: "Missing name",
+                message: "Supplier name required.",
+            });
+            return;
+        }
+        try {
+            await axios.post(`${API_URL}/supplier`, {
+                ...form,
+                storeId,
+            });
+            setForm({ name: "", gstin: "", phone: "", email: "", state: "" });
+            notify({
+                type: "success",
+                title: "Supplier added",
+                message: "Supplier created successfully.",
+            });
+            load();
+        } catch (error) {
+            notify({
+                type: "error",
+                title: "Create failed",
+                message: error.response?.data?.message || "Failed to add supplier.",
+            });
+        }
     };
 
     return (

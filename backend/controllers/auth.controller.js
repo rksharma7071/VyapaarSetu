@@ -1,11 +1,47 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
 import { User } from "../models/user.model.js";
 import Store from "../models/store.model.js";
+import RefreshToken from "../models/refreshToken.model.js";
 
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function hashToken(token) {
+    return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function generateSessionId() {
+    return crypto.randomUUID();
+}
+
+function createAccessToken(user) {
+    return jwt.sign(
+        {
+            id: user._id,
+            role: user.role,
+            storeId: user.storeId,
+            sid: user.sessionId || "",
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "15m" },
+    );
+}
+
+async function createRefreshToken(user, reqIp) {
+    const token = crypto.randomBytes(40).toString("hex");
+    const tokenHash = hashToken(token);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    await RefreshToken.create({
+        userId: user._id,
+        tokenHash,
+        expiresAt,
+        createdByIp: reqIp || "",
+    });
+    return token;
 }
 
 async function handleAuthSignUp(req, res) {
@@ -41,16 +77,14 @@ async function handleAuthSignUp(req, res) {
 
         await newUser.save();
 
-        // Generate JWT token
-        const token = jwt.sign(
-            { id: newUser._id, role: newUser.role, storeId: newUser.storeId },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "1d",
-            },
-        );
+        newUser.sessionId = generateSessionId();
+        await newUser.save();
+
+        const token = createAccessToken(newUser);
+        const refreshToken = await createRefreshToken(newUser, req.ip);
         res.json({
             token,
+            refreshToken,
             user: {
                 id: newUser._id,
                 email: newUser.email,
@@ -83,6 +117,9 @@ async function handleAuthLogin(req, res) {
         if (!user) {
             return res.status(400).json({ message: "User not found." });
         }
+        if (user.isActive === false) {
+            return res.status(403).json({ message: "Account is deactivated." });
+        }
 
         // 2. Compare passwords
         const isMatch = await bcrypt.compare(password, user.password);
@@ -96,11 +133,14 @@ async function handleAuthLogin(req, res) {
             return res.status(500).json({ message: "Server config error." });
         }
 
-        const token = jwt.sign(
-            { id: user._id, role: user.role, storeId: user.storeId },
-            process.env.JWT_SECRET,
-            { expiresIn: "1d" },
+        user.sessionId = generateSessionId();
+        await RefreshToken.updateMany(
+            { userId: user._id, revokedAt: null },
+            { $set: { revokedAt: new Date(), revokedByIp: req.ip || "" } },
         );
+        await user.save();
+        const token = createAccessToken(user);
+        const refreshToken = await createRefreshToken(user, req.ip);
 
         // 4. Respond with token and user info
         const storeId = user.storeId || null;
@@ -116,6 +156,7 @@ async function handleAuthLogin(req, res) {
 
         return res.json({
             token,
+            refreshToken,
             user: {
                 id: user._id,
                 email: user.email,
@@ -224,6 +265,8 @@ async function handleAuthVerifyOTP(req, res) {
         return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
+    user.otpVerifiedAt = new Date();
+    await user.save();
     res.json({ message: "OTP verified, you can reset password now" });
 }
 
@@ -232,13 +275,62 @@ async function handleAuthResetPassword(req, res) {
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    const verifiedAt = user.otpVerifiedAt ? new Date(user.otpVerifiedAt) : null;
+    if (!verifiedAt || Date.now() - verifiedAt.getTime() > 10 * 60 * 1000) {
+        return res.status(400).json({ message: "OTP verification required" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     user.otp = null;
     user.otpExpiry = null;
+    user.otpVerifiedAt = null;
     await user.save();
 
     res.json({ message: "Password reset successfully" });
+}
+
+async function handleAuthRefresh(req, res) {
+    try {
+        const { refreshToken } = req.body;
+        if (!refreshToken) {
+            return res.status(400).json({ message: "Refresh token required" });
+        }
+        const tokenHash = hashToken(refreshToken);
+        const existing = await RefreshToken.findOne({ tokenHash });
+        if (!existing || existing.revokedAt || existing.expiresAt < new Date()) {
+            return res.status(401).json({ message: "Invalid refresh token" });
+        }
+        const user = await User.findById(existing.userId);
+        if (!user || user.isActive === false) {
+            return res.status(401).json({ message: "Invalid user" });
+        }
+
+        existing.revokedAt = new Date();
+        existing.revokedByIp = req.ip || "";
+        await existing.save();
+
+        const newAccessToken = createAccessToken(user);
+        const newRefreshToken = await createRefreshToken(user, req.ip);
+        return res.json({ token: newAccessToken, refreshToken: newRefreshToken });
+    } catch (error) {
+        return res.status(500).json({ message: "Failed to refresh token" });
+    }
+}
+
+async function handleAuthLogout(req, res) {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
+        await RefreshToken.updateMany(
+            { userId, revokedAt: null },
+            { $set: { revokedAt: new Date(), revokedByIp: req.ip || "" } },
+        );
+        await User.findByIdAndUpdate(userId, { sessionId: generateSessionId() });
+        return res.json({ message: "Logged out" });
+    } catch (error) {
+        return res.status(500).json({ message: "Logout failed" });
+    }
 }
 
 export {
@@ -248,4 +340,6 @@ export {
     handleAuthRequestOTP,
     handleAuthVerifyOTP,
     handleAuthResetPassword,
+    handleAuthRefresh,
+    handleAuthLogout,
 };

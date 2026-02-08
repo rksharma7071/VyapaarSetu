@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Cart from "./Cart";
-import Loading from "../Loading";
 import { fetchProducts } from "../../store/productsSlice";
 import { fetchStores } from "../../store/storeSlice";
 import {
@@ -76,7 +75,7 @@ function Main() {
     }, [cart]);
 
     if (loading) {
-        return <Loading />;
+        return null;
     }
 
     if (error) {
