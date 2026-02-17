@@ -201,7 +201,7 @@ function EditProduct() {
                             name="image"
                             accept="image/jpeg,image/png,image/webp"
                             onChange={handleChangeFile}
-                            className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm file:mr-4 file:rounded-l-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:bg-primary/90"
+                            className="block w-full cursor-pointer rounded-lg border border-gray-200 bg-white text-sm file:mr-4 file:rounded-l-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:bg-primary/90"
                         />
 
                         {preview && (
@@ -210,7 +210,7 @@ function EditProduct() {
                                 <img
                                     src={preview}
                                     alt={product.name}
-                                    className="h-32 w-32 rounded-lg border border-gray-300 object-cover"
+                                    className="h-32 w-32 rounded-lg border border-gray-200 object-cover"
                                 />
                             </div>
                         )}
@@ -222,7 +222,7 @@ function EditProduct() {
                                 name="isActive"
                                 value={String(product.isActive)}
                                 onChange={(e) => setProduct(prev => ({ ...prev, isActive: e.target.value === "true" }))}
-                                className="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
                                 <option value="">Select status</option>
                                 <option value="true">Publish</option>

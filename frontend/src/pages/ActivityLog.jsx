@@ -60,7 +60,7 @@ function ActivityLog() {
                             <div className="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700">
                                 {month}
                             </div>
-                            <div className="divide-y">
+                            <div className="divide-y divide-gray-200">
                                 {items.map((log) => {
                                     const time = new Date(log.createdAt).toLocaleString("en-IN", {
                                         day: "2-digit",

@@ -188,7 +188,7 @@ function Register() {
                         <label className="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" id="rememberme" onChange={handleRememberMe} className="peer hidden" />
                             <div
-                                className=" h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20"
+                                className=" h-4 w-4 rounded border border-gray-200 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20"
                             >
                                 <svg
                                     className="h-3 w-3 text-white peer-checked:block"

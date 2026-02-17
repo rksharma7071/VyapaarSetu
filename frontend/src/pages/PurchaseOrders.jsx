@@ -114,7 +114,7 @@ function PurchaseOrders() {
                     <select
                         value={supplierId}
                         onChange={(e) => setSupplierId(e.target.value)}
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
                     >
                         <option value="">Select supplier</option>
                         {suppliers.map((s) => (
@@ -125,7 +125,7 @@ function PurchaseOrders() {
                     </select>
                     <button
                         onClick={addItem}
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm size-10"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm size-10"
                     >
                         +
                     </button>
@@ -143,7 +143,7 @@ function PurchaseOrders() {
                             onChange={(e) =>
                                 updateItem(idx, "productId", e.target.value)
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                         >
                             <option value="">Select product</option>
                             {products.map((p) => (
@@ -191,7 +191,7 @@ function PurchaseOrders() {
                     </thead>
                     <tbody>
                         {orders.map((po) => (
-                            <tr key={po._id} className="border-t border-gray-300">
+                            <tr key={po._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{po.poNumber}</td>
                                 <td className="px-4 py-3">{po.supplierId?.name || "-"}</td>
                                 <td className="px-4 py-3">{po.status}</td>

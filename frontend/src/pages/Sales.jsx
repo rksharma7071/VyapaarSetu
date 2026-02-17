@@ -32,7 +32,7 @@ function Sales() {
                     </thead>
                     <tbody>
                         {orders.map((o) => (
-                            <tr key={o._id} className="border-t border-gray-300">
+                            <tr key={o._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{o.orderNumber}</td>
                                 <td className="px-4 py-3">
                                     {o.customer?.name || "-"}

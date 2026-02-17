@@ -21,7 +21,7 @@ function Input({
             placeholder={placeholder}
             disabled={disabled}
             {...rest}
-            className={`w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none ${className}`}
+            className={`w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none ${className}`}
         />
     );
 }

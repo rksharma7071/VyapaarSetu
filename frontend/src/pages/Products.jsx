@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FiDownload, FiPlusCircle } from "react-icons/fi";
 import { IoSearch } from "react-icons/io5";
 import { LuEye } from "react-icons/lu";
@@ -42,6 +42,8 @@ function Products() {
     const [bulkEditOpen, setBulkEditOpen] = useState(false);
     const [bulkEditRows, setBulkEditRows] = useState([]);
     const [bulkEditOriginal, setBulkEditOriginal] = useState([]);
+    const [importing, setImporting] = useState(false);
+    const importFileRef = useRef(null);
 
     /* ---------------- FETCH ---------------- */
     useEffect(() => {
@@ -132,6 +134,327 @@ function Products() {
 
     const handleRefresh = () => {
         dispatch(fetchProducts());
+    };
+
+    const csvFieldAliases = {
+        slug: ["slug", "product slug"],
+        name: ["name", "product", "product name", "title"],
+        sku: ["sku"],
+        description: ["description", "desc"],
+        type: ["type"],
+        category: ["category"],
+        price: ["price", "mrp", "selling price"],
+        taxRate: ["taxrate", "tax rate", "tax %"],
+        gstRate: ["gstrate", "gst rate", "gst %"],
+        hsn: ["hsn", "hsn code"],
+        trackStock: ["trackstock", "track stock"],
+        stockQty: ["stockqty", "stock qty", "quantity", "qty"],
+        unit: ["unit", "uom"],
+        isActive: ["isactive", "active", "status"],
+    };
+
+    const normalizeHeader = (value) =>
+        String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, " ");
+
+    const parseCsvLine = (line) => {
+        const values = [];
+        let current = "";
+        let inQuotes = false;
+        for (let i = 0; i < line.length; i += 1) {
+            const char = line[i];
+            if (char === "\"") {
+                if (inQuotes && line[i + 1] === "\"") {
+                    current += "\"";
+                    i += 1;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === "," && !inQuotes) {
+                values.push(current.trim());
+                current = "";
+            } else {
+                current += char;
+            }
+        }
+        values.push(current.trim());
+        return values;
+    };
+
+    const toBoolean = (value, fallback = true) => {
+        if (value === undefined || value === null || String(value).trim() === "") {
+            return fallback;
+        }
+        const normalized = String(value).trim().toLowerCase();
+        if (["true", "1", "yes", "active", "publish"].includes(normalized)) {
+            return true;
+        }
+        if (["false", "0", "no", "inactive", "draft"].includes(normalized)) {
+            return false;
+        }
+        return fallback;
+    };
+
+    const slugify = (value) =>
+        String(value || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9\s-]/g, "")
+            .replace(/\s+/g, "-")
+            .replace(/-+/g, "-");
+
+    const normalizeType = (value) => {
+        const raw = String(value || "").trim().toLowerCase();
+        const allowed = ["food", "beverage", "retail", "service", "other"];
+        if (!raw) return "retail";
+        return allowed.includes(raw) ? raw : "retail";
+    };
+
+    const normalizeNumber = (value, fallback = "") => {
+        const raw = String(value ?? "").trim();
+        if (!raw) return fallback;
+        const sanitized = raw.replace(/[^0-9.-]/g, "");
+        const numeric = Number(sanitized);
+        return Number.isFinite(numeric) ? String(numeric) : fallback;
+    };
+
+    const resolveField = (headers, rowValues, fieldName) => {
+        const aliases = csvFieldAliases[fieldName] || [fieldName];
+        for (const alias of aliases) {
+            const index = headers.findIndex((h) => h === alias);
+            if (index >= 0) return rowValues[index];
+        }
+        return "";
+    };
+
+    const escapeCsvCell = (value) => {
+        const text = String(value ?? "");
+        if (/[",\n]/.test(text)) {
+            return `"${text.replace(/"/g, "\"\"")}"`;
+        }
+        return text;
+    };
+
+    const handleImportButtonClick = () => {
+        if (!canCreate) {
+            notify({
+                type: "warning",
+                title: "Permission denied",
+                message: "You don’t have access to import products.",
+            });
+            return;
+        }
+        importFileRef.current?.click();
+    };
+
+    const handleImportProducts = async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setImporting(true);
+            const text = await file.text();
+            const lines = text
+                .split(/\r?\n/)
+                .map((line) => line.trim())
+                .filter(Boolean);
+
+            if (lines.length < 2) {
+                notify({
+                    type: "warning",
+                    title: "Invalid file",
+                    message: "Upload a CSV file with header and at least one row.",
+                });
+                return;
+            }
+
+            const rawHeaders = parseCsvLine(lines[0]).map(normalizeHeader);
+            const dataLines = lines.slice(1);
+
+            let createdCount = 0;
+            let updatedCount = 0;
+            let skippedCount = 0;
+            const failedRows = [];
+
+            for (let i = 0; i < dataLines.length; i += 1) {
+                const rowNumber = i + 2;
+                const rowValues = parseCsvLine(dataLines[i]);
+
+                const name = resolveField(rawHeaders, rowValues, "name");
+                const price = normalizeNumber(
+                    resolveField(rawHeaders, rowValues, "price"),
+                    "",
+                );
+                const category = String(
+                    resolveField(rawHeaders, rowValues, "category"),
+                ).trim() || "General";
+                const type = normalizeType(
+                    resolveField(rawHeaders, rowValues, "type"),
+                );
+
+                if (!String(name || "").trim() || !String(price || "").trim()) {
+                    skippedCount += 1;
+                    continue;
+                }
+
+                const rowSlug =
+                    resolveField(rawHeaders, rowValues, "slug") || slugify(name);
+                if (!rowSlug) {
+                    skippedCount += 1;
+                    continue;
+                }
+
+                const formData = new FormData();
+                formData.append("slug", rowSlug);
+                formData.append("name", name);
+                formData.append("sku", resolveField(rawHeaders, rowValues, "sku"));
+                formData.append(
+                    "description",
+                    resolveField(rawHeaders, rowValues, "description"),
+                );
+                formData.append("type", type);
+                formData.append("category", category);
+                formData.append("price", price);
+                formData.append(
+                    "taxRate",
+                    normalizeNumber(
+                        resolveField(rawHeaders, rowValues, "taxRate"),
+                        "0",
+                    ),
+                );
+                formData.append(
+                    "gstRate",
+                    normalizeNumber(
+                        resolveField(rawHeaders, rowValues, "gstRate"),
+                        normalizeNumber(
+                            resolveField(rawHeaders, rowValues, "taxRate"),
+                            "0",
+                        ),
+                    ),
+                );
+                formData.append("hsn", resolveField(rawHeaders, rowValues, "hsn"));
+                formData.append(
+                    "trackStock",
+                    toBoolean(resolveField(rawHeaders, rowValues, "trackStock"), true),
+                );
+                formData.append(
+                    "stockQty",
+                    normalizeNumber(
+                        resolveField(rawHeaders, rowValues, "stockQty"),
+                        "0",
+                    ),
+                );
+                formData.append("unit", resolveField(rawHeaders, rowValues, "unit"));
+                formData.append(
+                    "isActive",
+                    toBoolean(resolveField(rawHeaders, rowValues, "isActive"), true),
+                );
+
+                try {
+                    let exists = false;
+                    try {
+                        const checkRes = await axios.get(`${API_URL}/product/${rowSlug}`);
+                        exists = Boolean(checkRes?.data?.data?._id || checkRes?.data?.data?.slug);
+                    } catch (checkError) {
+                        if (checkError?.response?.status !== 404) {
+                            throw checkError;
+                        }
+                    }
+
+                    if (exists) {
+                        await axios.patch(`${API_URL}/product/${rowSlug}`, formData);
+                        updatedCount += 1;
+                    } else {
+                        await axios.post(`${API_URL}/product`, formData);
+                        createdCount += 1;
+                    }
+                } catch (rowError) {
+                    failedRows.push({
+                        rowNumber,
+                        message: rowError?.response?.data?.message || "Upsert failed",
+                    });
+                }
+            }
+
+            const summaryBits = [
+                `${createdCount} created`,
+                `${updatedCount} updated`,
+                skippedCount ? `${skippedCount} skipped` : "",
+                failedRows.length ? `${failedRows.length} failed` : "",
+            ].filter(Boolean);
+
+            notify({
+                type: failedRows.length ? "warning" : "success",
+                title: "Import completed",
+                message: `${summaryBits.join(", ")}${failedRows[0]?.message ? `, first error: ${failedRows[0].message}` : ""}`,
+            });
+
+            if (failedRows.length) {
+                console.error("Import row failures:", failedRows.slice(0, 10));
+            }
+
+            dispatch(fetchProducts());
+        } catch {
+            notify({
+                type: "error",
+                title: "Import failed",
+                message: "Unable to parse file. Please upload a valid CSV file.",
+            });
+        } finally {
+            setImporting(false);
+            if (event.target) event.target.value = "";
+        }
+    };
+
+    const handleExportProducts = () => {
+        const rows = filteredProducts.map((product) => ({
+            slug: product.slug || "",
+            name: product.name || "",
+            sku: product.sku || "",
+            description: product.description || "",
+            type: product.type || "",
+            category: product.category || "",
+            price: product.price ?? "",
+            taxRate: product.taxRate ?? "",
+            gstRate: product.gstRate ?? "",
+            hsn: product.hsn || "",
+            trackStock: product.trackStock ?? "",
+            stockQty: product.stockQty ?? "",
+            unit: product.unit || "",
+            isActive: product.isActive ?? "",
+        }));
+
+        if (!rows.length) {
+            notify({
+                type: "info",
+                title: "No products",
+                message: "There are no products to export for current filters.",
+            });
+            return;
+        }
+
+        const headers = Object.keys(rows[0]);
+        const csvBody = [
+            headers.join(","),
+            ...rows.map((row) =>
+                headers.map((header) => escapeCsvCell(row[header])).join(","),
+            ),
+        ].join("\n");
+
+        const blob = new Blob([csvBody], {
+            type: "text/csv;charset=utf-8;",
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const date = new Date().toISOString().slice(0, 10);
+        link.href = url;
+        link.download = `products-export-${date}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const canDelete = permission?.admin || permission?.deleteProduct;
@@ -338,9 +661,26 @@ function Products() {
                             <FiPlusCircle className='text-lg' /> Add
                         </button>
                     )}
-                    <button className="flex justify-between items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30">
-                        <FiDownload className='text-lg' /> Import
+                    <button
+                        onClick={handleImportButtonClick}
+                        disabled={importing}
+                        className="flex justify-between items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-secondary/90 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-secondary/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                        <FiDownload className='text-lg' /> {importing ? "Importing..." : "Import CSV"}
                     </button>
+                    <button
+                        onClick={handleExportProducts}
+                        className="flex justify-between items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-all duration-200 hover:bg-gray-100 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-gray-300"
+                    >
+                        <FiDownload className='text-lg' /> Export CSV
+                    </button>
+                    <input
+                        ref={importFileRef}
+                        type="file"
+                        accept=".csv,text/csv,application/vnd.ms-excel"
+                        onChange={handleImportProducts}
+                        className="hidden"
+                    />
                     {selectedProducts.length > 0 && (
                         <div className="flex flex-wrap items-center gap-2 text-sm">
                             <span className="rounded-full bg-gray-100 px-3 py-1 text-gray-700">
@@ -351,7 +691,7 @@ function Products() {
                                     <select
                                         value={bulkStatus}
                                         onChange={(e) => setBulkStatus(e.target.value)}
-                                        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                                        className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                                     >
                                         <option value="">Set status</option>
                                         <option value="true">Publish</option>
@@ -360,14 +700,14 @@ function Products() {
                                     {bulkStatus !== "" && (
                                         <button
                                             onClick={handleBulkStatus}
-                                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                                         >
                                             Update Status
                                         </button>
                                     )}
                                     <button
                                         onClick={openBulkEdit}
-                                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                                     >
                                         Bulk Edit
                                     </button>
@@ -395,16 +735,16 @@ function Products() {
                             </div>
                             <button
                                 onClick={() => setBulkEditOpen(false)}
-                                className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+                                className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm"
                             >
                                 Close
                             </button>
                         </div>
 
-                        <div className="overflow-auto border border-gray-200 rounded-lg">
+                        <div className="overflow-auto border border-gray-200 rounded-lg h-180">
                             <table className="min-w-[900px] w-full text-sm">
                                 <thead className="bg-gray-100">
-                                    <tr>
+                                    <tr className="border-b border-gray-200">
                                         <th className="px-3 py-2 text-left">Product</th>
                                         <th className="px-3 py-2 text-left">Category</th>
                                         <th className="px-3 py-2 text-right">Price</th>
@@ -417,7 +757,7 @@ function Products() {
                                 </thead>
                                 <tbody>
                                     {bulkEditRows.map((row) => (
-                                        <tr key={row._id} className="border-t">
+                                        <tr key={row._id} className="border-t border-gray-200">
                                             <td className="px-3 py-2">
                                                 <Input
                                                     value={row.name}
@@ -491,7 +831,7 @@ function Products() {
                                                             e.target.value === "true",
                                                         )
                                                     }
-                                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                                    className="w-fit rounded-lg border border-gray-200 px-3 py-2 text-sm"
                                                 >
                                                     <option value="true">Publish</option>
                                                     <option value="false">Draft</option>
@@ -513,7 +853,7 @@ function Products() {
                         <div className="mt-4 flex items-center justify-end gap-2">
                             <button
                                 onClick={() => setBulkEditOpen(false)}
-                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                                className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
                             >
                                 Cancel
                             </button>
@@ -551,7 +891,7 @@ function Products() {
                             <select
                                 value={categoryFilter}
                                 onChange={(e) => dispatch(setCategoryFilter(e.target.value))}
-                                className="w-36 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                className="w-36 appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
                                 <option value="">All Categories</option>
                                 {categories.map((c) => (
@@ -564,7 +904,7 @@ function Products() {
                             <select
                                 value={typeFilter}
                                 onChange={(e) => dispatch(setTypeFilter(e.target.value))}
-                                className="w-36 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                className="w-36 appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
                                 <option value="">All Types</option>
                                 {types.map((t) => (
@@ -589,7 +929,7 @@ function Products() {
                                                 onChange={handleSelectAll}
                                                 className="peer hidden"
                                             />
-                                            <div className="h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
+                                            <div className="h-4 w-4 rounded border border-gray-200 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
                                                 <FaCheck className="h-3 w-3 text-white peer-checked:block" />
                                             </div>
                                         </label>
@@ -605,7 +945,7 @@ function Products() {
                                     <th className="px-2 py-2 text-center font-semibold">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-300">
+                            <tbody className="divide-y divide-gray-200">
                                 {currentProducts.length > 0 ? (currentProducts.map((product) => (
                                     <tr key={product._id} className="transition hover:bg-gray-50">
                                         <td className="px-4 py-1 text-center">
@@ -616,7 +956,7 @@ function Products() {
                                                     onChange={() => handleSelectProduct(product._id)}
                                                     className="peer hidden"
                                                 />
-                                                <div className="h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
+                                                <div className="h-4 w-4 rounded border border-gray-200 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
                                                     <FaCheck className="h-3 w-3 text-white peer-checked:block" />
                                                 </div>
                                             </label>
@@ -624,7 +964,7 @@ function Products() {
                                         {/* <td className="px-2 py-1 text-gray-700">{product.sku}</td> */}
                                         <td className="px-2 py-1">
                                             <div className="flex items-center gap-3 hover:cursor-pointer" onClick={() => navigate(`/products/${product.slug}`)}>
-                                                <div className="h-12 w-12 overflow-hidden rounded-lg border border-gray-300 bg-gray-100 ">
+                                                <div className="h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-gray-100 ">
                                                     <img
                                                         src={product.image}
                                                         alt={product.name}
@@ -695,13 +1035,13 @@ function Products() {
                             </tbody>
                         </table>
                     </div>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 bg-white border-t border-gray-300">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 bg-white border-t border-gray-200">
                         <div className="flex items-center gap-3 text-sm text-gray-700">
                             <span className="font-medium">Rows per page:</span>
                             <select
                                 value={rowsPerPage}
                                 onChange={handleRowsPerPageChange}
-                                className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent hover:border-gray-400 transition-colors cursor-pointer"
+                                className="px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent hover:border-gray-400 transition-colors cursor-pointer"
                             >
                                 <option value="10">10</option>
                                 <option value="20">20</option>
@@ -721,7 +1061,7 @@ function Products() {
                                     handlePageChange(currentPage - 1)
                                 }
                                 disabled={currentPage === 1}
-                                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
@@ -743,7 +1083,7 @@ function Products() {
                                             }
                                             className={`w-9 h-9 rounded-lg font-medium transition-colors ${currentPage === page
                                                 ? "bg-primary text-white hover:bg-primary"
-                                                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                                : "border border-gray-200 text-gray-700 hover:bg-gray-50"
                                                 }`}
                                         >
                                             {page}
@@ -760,7 +1100,7 @@ function Products() {
                                     currentPage === totalPages ||
                                     totalPages === 0
                                 }
-                                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>

@@ -195,7 +195,7 @@ function RolePermissions() {
                         className={`rounded-full border px-4 py-2 text-sm transition ${
                             selectedRole === role
                                 ? "border-primary bg-primary/10 text-primary"
-                                : "border-gray-300 text-gray-600 hover:bg-gray-100"
+                                : "border-gray-200 text-gray-600 hover:bg-gray-100"
                         }`}
                     >
                         {roleLabels[role]}
@@ -220,7 +220,7 @@ function RolePermissions() {
                                             className={`rounded-full border px-3 py-1 text-xs transition ${
                                                 active
                                                     ? "border-primary bg-primary text-white"
-                                                    : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
                                             }`}
                                         >
                                             {action.label}

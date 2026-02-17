@@ -91,14 +91,13 @@ function Main() {
                     <div className="flex flex-1 flex-col gap-4 overflow-hidden p-4">
                         <Outlet
                             context={{
-                                addToCart,
                                 cart,
                                 addToCart: (product) => dispatch(addToCart(product))
                             }}
                         />
                     </div>
 
-                    <div className="hidden md:flex w-full max-w-sm flex-col border-l border-gray-300 bg-white p-5">
+                    <div className="hidden md:flex w-full max-w-sm flex-col border-l border-gray-200 bg-white p-5">
                         <Cart
                             cart={cart}
                             subtotal={subtotal}
@@ -108,7 +107,7 @@ function Main() {
                     </div>
                 </div>
 
-                <div className="md:hidden border-t border-gray-300 bg-white p-3">
+                <div className="md:hidden border-t border-gray-200 bg-white p-3">
                     <button className="flex w-full items-center justify-between rounded-lg bg-primary px-4 py-3 text-white font-semibold">
                         <span>{cart.length} items</span>
                         <span>₹{subtotal}</span>

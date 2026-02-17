@@ -162,7 +162,7 @@ function OrderById() {
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate(-1)}
-                        className="rounded-lg border border-gray-300 p-2 hover:bg-gray-100"
+                        className="rounded-lg border border-gray-200 p-2 hover:bg-gray-100"
                     >
                         <LuArrowLeft />
                     </button>
@@ -174,7 +174,7 @@ function OrderById() {
                     {canPrintInvoice && (
                         <button
                             onClick={handlePrintInvoice}
-                            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm"
                             disabled={invoiceLoading}
                         >
                             {invoiceLoading ? "Preparing..." : "Print Invoice"}
@@ -183,7 +183,7 @@ function OrderById() {
                     {canReturn && (
                         <button
                             onClick={() => setShowReturn((v) => !v)}
-                            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm"
                         >
                             Return Order
                         </button>
@@ -191,7 +191,7 @@ function OrderById() {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-300 p-6 space-y-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                         <p className="text-gray-500">Payment</p>
@@ -219,7 +219,7 @@ function OrderById() {
             </div>
 
             {showReturn && canReturn && (
-                <div className="bg-white rounded-lg border border-gray-300 p-4 space-y-3">
+                <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
                     <div className="font-semibold">Return Confirmation</div>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                         <div className="flex flex-col gap-1">
@@ -227,7 +227,7 @@ function OrderById() {
                             <select
                                 value={refundMethod}
                                 onChange={(e) => setRefundMethod(e.target.value)}
-                                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                             >
                                 <option value="cash">Cash</option>
                                 <option value="card">Card</option>
@@ -237,7 +237,7 @@ function OrderById() {
                         </div>
                         <div className="flex flex-col gap-1">
                             <label className="text-xs text-gray-600">Refund Amount</label>
-                            <div className="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                            <div className="rounded-lg border border-gray-200 px-3 py-2 text-sm">
                                 ₹{refundAmount}
                             </div>
                         </div>
@@ -253,7 +253,7 @@ function OrderById() {
                     <div className="flex gap-3">
                         <button
                             onClick={() => setShowReturn(false)}
-                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
                         >
                             Cancel
                         </button>
@@ -268,7 +268,7 @@ function OrderById() {
                 </div>
             )}
 
-            <div className="bg-white rounded-lg border border-gray-300 overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                 <table className="w-full text-sm">
                     <thead className="bg-gray-100">
                         <tr>
@@ -278,7 +278,7 @@ function OrderById() {
                             <th className="px-4 py-2 text-right">Total</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-300">
+                    <tbody className="divide-y divide-gray-200">
                         {selectedOrder.items.map((item) => (
                             <tr key={item.productId?._id || item.productId}>
                                 <td className="px-4 py-2">
@@ -287,11 +287,11 @@ function OrderById() {
                                             <img
                                                 src={item.productId.image}
                                                 alt={item.name}
-                                                className="h-10 w-10 rounded-lg border border-gray-300 object-cover"
+                                                className="h-10 w-10 rounded-lg border border-gray-200 object-cover"
                                                 loading="lazy"
                                             />
                                         ) : (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-gray-100 text-xs font-semibold text-gray-500">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-500">
                                                 {item.name?.[0] || "P"}
                                             </div>
                                         )}

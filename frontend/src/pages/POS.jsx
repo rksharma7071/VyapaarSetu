@@ -57,7 +57,7 @@ function POS() {
 
     return (
         <>
-            <div className="shrink-0 rounded-xl border border-gray-300 bg-white p-4">
+            <div className="shrink-0 rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <h2 className="font-semibold">Scanner / Keyboard</h2>
                     <Input
@@ -70,7 +70,7 @@ function POS() {
                 </div>
             </div>
 
-            <div className="shrink-0 rounded-xl border border-gray-300 bg-white p-4">
+            <div className="shrink-0 rounded-xl border border-gray-200 bg-white p-4">
                 <h2 className="mb-3 font-semibold">Categories</h2>
 
                 <div className="flex flex-wrap gap-2">
@@ -81,7 +81,7 @@ function POS() {
                             className={`rounded-full px-4 py-2 text-sm border
                                 ${activeCategory === cat
                                     ? "bg-primary text-white border-primary"
-                                    : "bg-white border-gray-300 hover:border-primary"
+                                    : "bg-white border-gray-200 hover:border-primary"
                                 }`}
                         >
                             {cat}
@@ -96,7 +96,7 @@ function POS() {
                         <button
                             key={product._id}
                             onClick={() => dispatch(addToCart(product))}
-                            className="rounded-xl border border-gray-300 bg-white p-3 transition hover:shadow-md"
+                            className="rounded-xl border border-gray-200 bg-white p-3 transition hover:shadow-md"
                         >
                             <img
                                 src={product.image}

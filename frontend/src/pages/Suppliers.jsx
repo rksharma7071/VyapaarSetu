@@ -118,7 +118,7 @@ function Suppliers() {
                     </thead>
                     <tbody>
                         {items.map((s) => (
-                            <tr key={s._id} className="border-t border-gray-300">
+                            <tr key={s._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{s.name}</td>
                                 <td className="px-4 py-3">{s.gstin || "-"}</td>
                                 <td className="px-4 py-3">{s.phone || "-"}</td>

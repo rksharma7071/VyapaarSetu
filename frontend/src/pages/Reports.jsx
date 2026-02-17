@@ -22,25 +22,25 @@ function Reports() {
         <div className="bg-gray-50 px-8 py-6 space-y-6 overflow-y-auto">
             <div className="text-xl font-semibold text-gray-900">Reports</div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                <div className="rounded-lg border bg-white p-4 border-gray-300">
+                <div className="rounded-lg border bg-white p-4 border-gray-200">
                     <div className="text-sm text-gray-500">Total Sales</div>
                     <div className="text-xl font-semibold">
                         ₹{summary?.totalSales || 0}
                     </div>
                 </div>
-                <div className="rounded-lg border bg-white p-4 border-gray-300">
+                <div className="rounded-lg border bg-white p-4 border-gray-200">
                     <div className="text-sm text-gray-500">Orders</div>
                     <div className="text-xl font-semibold">
                         {summary?.totalOrders || 0}
                     </div>
                 </div>
-                <div className="rounded-lg border bg-white p-4 border-gray-300">
+                <div className="rounded-lg border bg-white p-4 border-gray-200">
                     <div className="text-sm text-gray-500">Tax</div>
                     <div className="text-xl font-semibold">
                         ₹{summary?.totalTax || 0}
                     </div>
                 </div>
-                <div className="rounded-lg border bg-white p-4 border-gray-300">
+                <div className="rounded-lg border bg-white p-4 border-gray-200">
                     <div className="text-sm text-gray-500">Discount</div>
                     <div className="text-xl font-semibold">
                         ₹{summary?.totalDiscount || 0}
@@ -60,7 +60,7 @@ function Reports() {
                     </thead>
                     <tbody>
                         {topProducts.map((p) => (
-                            <tr key={p._id} className="border-t border-gray-300">
+                            <tr key={p._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{p.name}</td>
                                 <td className="px-4 py-3">{p.qty}</td>
                                 <td className="px-4 py-3">₹{p.sales}</td>
