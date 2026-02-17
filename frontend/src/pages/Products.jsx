@@ -220,6 +220,11 @@ function Products() {
         return Number.isFinite(numeric) ? String(numeric) : fallback;
     };
 
+    const formatPrice = (value) => {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric.toFixed(2) : "0.00";
+    };
+
     const resolveField = (headers, rowValues, fieldName) => {
         const aliases = csvFieldAliases[fieldName] || [fieldName];
         for (const alias of aliases) {
@@ -416,7 +421,7 @@ function Products() {
             description: product.description || "",
             type: product.type || "",
             category: product.category || "",
-            price: product.price ?? "",
+            price: formatPrice(product.price),
             taxRate: product.taxRate ?? "",
             gstRate: product.gstRate ?? "",
             hsn: product.hsn || "",
@@ -977,7 +982,7 @@ function Products() {
                                         </td>
                                         <td className="px-2 py-1 text-gray-600">{product.category}</td>
                                         <td className="px-2 py-1 text-gray-600">{product.type}</td>
-                                        <td className="px-2 py-1 font-medium text-gray-800">₹{product.price}</td>
+                                        <td className="px-2 py-1 font-medium text-gray-800">₹{formatPrice(product.price)}</td>
                                         <td className="px-2 py-1">
                                             <span
                                                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${

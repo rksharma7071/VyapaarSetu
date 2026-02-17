@@ -45,6 +45,10 @@ import EmailVerification from "./pages/Authentication/EmailVerification.jsx";
 import ResetPassword from "./pages/Authentication/ResetPassword.jsx";
 import Success from "./pages/Authentication/Success.jsx";
 import Verification from "./pages/Authentication/Verification.jsx";
+import ComingSoon from "./pages/Authentication/ComingSoon.jsx";
+import Error404 from "./pages/Authentication/Error404.jsx";
+import Error500 from "./pages/Authentication/Error500.jsx";
+import UnderMaintenance from "./pages/Authentication/UnderMaintenance.jsx";
 
 // POS
 import POS from "./pages/POS.jsx";
@@ -171,6 +175,10 @@ const router = createBrowserRouter([
   { path: "/reset-password", element: <ResetPassword /> },
   { path: "/success", element: <Success /> },
   { path: "/verification", element: <Verification /> },
+  { path: "/coming-soon", element: <ComingSoon /> },
+  { path: "/under-maintenance", element: <UnderMaintenance /> },
+  { path: "/500", element: <Error500 /> },
+  { path: "*", element: <Error404 /> },
 ]);
 
 applyTheme(loadTheme());
