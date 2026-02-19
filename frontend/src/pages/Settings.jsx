@@ -117,7 +117,7 @@ function Settings() {
                     </div>
                     <button
                         onClick={resetTheme}
-                        className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs text-gray-700"
+                        className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-700"
                     >
                         Reset to Default
                     </button>
@@ -130,7 +130,7 @@ function Settings() {
                             onClick={() => updateTheme({ mode: "light" })}
                             className={`rounded-lg border px-4 py-2 text-sm ${mode === "light"
                                     ? "border-primary bg-primary/10 text-primary"
-                                    : "border-gray-300 text-gray-600"
+                                    : "border-gray-200 text-gray-600"
                                 }`}
                         >
                             Light
@@ -139,7 +139,7 @@ function Settings() {
                             onClick={() => updateTheme({ mode: "dark" })}
                             className={`rounded-lg border px-4 py-2 text-sm ${mode === "dark"
                                     ? "border-primary bg-primary/10 text-primary"
-                                    : "border-gray-300 text-gray-600"
+                                    : "border-gray-200 text-gray-600"
                                 }`}
                         >
                             Dark
@@ -196,7 +196,7 @@ function Settings() {
                         <button className="rounded-lg bg-primary px-4 py-2 text-sm text-white">
                             Primary Button
                         </button>
-                        <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm">
+                        <button className="rounded-lg border border-gray-200 px-4 py-2 text-sm">
                             Secondary Button
                         </button>
                         <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600">

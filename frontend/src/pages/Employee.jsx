@@ -105,7 +105,7 @@ function Employee() {
                             onChange={(e) =>
                                 setForm((f) => ({ ...f, role: e.target.value }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         >
                             <option value="admin">Admin</option>
                             <option value="manager">Manager</option>
@@ -136,7 +136,7 @@ function Employee() {
                         </thead>
                         <tbody>
                             {users.map((u) => (
-                                <tr key={u._id} className="border-t border-gray-300">
+                                <tr key={u._id} className="border-t border-gray-200">
                                     <td className="px-4 py-3">{u.name}</td>
                                     <td className="px-4 py-3">{u.email}</td>
                                     <td className="px-4 py-3">{u.role}</td>
@@ -152,7 +152,7 @@ function Employee() {
                                                             role: u.role,
                                                         })
                                                     }
-                                                    className="mr-2 rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                                    className="mr-2 rounded-lg border border-gray-200 px-3 py-1 text-xs"
                                                 >
                                                     Edit
                                                 </button>
@@ -237,7 +237,7 @@ function Employee() {
                                     role: e.target.value,
                                 }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         >
                             <option value="admin">Admin</option>
                             <option value="manager">Manager</option>

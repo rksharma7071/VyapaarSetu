@@ -53,7 +53,7 @@ function ProductById() {
             <div className="flex items-center gap-4">
                 <button
                     onClick={() => navigate(-1)}
-                    className="rounded-lg border border-gray-300 p-2 hover:bg-gray-100"
+                    className="rounded-lg border border-gray-200 p-2 hover:bg-gray-100"
                 >
                     <LuArrowLeft />
                 </button>
@@ -63,10 +63,10 @@ function ProductById() {
             </div>
 
             {/* Main Card */}
-            <div className="bg-white border border-gray-300 rounded-xl p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Image */}
                 <div className="space-y-4">
-                    <div className="border border-gray-300 rounded-xl overflow-hidden">
+                    <div className="border border-gray-200 rounded-xl overflow-hidden">
                         <img
                             src={image}
                             alt={name}
@@ -129,7 +129,7 @@ function ProductById() {
 
 function Stat({ label, value }) {
     return (
-        <div className="border border-gray-300 rounded-lg p-4 bg-gray-50">
+        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
             <p className="text-xs text-gray-500 uppercase">{label}</p>
             <p className="text-lg font-semibold text-gray-900">{value}</p>
         </div>

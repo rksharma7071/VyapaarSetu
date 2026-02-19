@@ -25,7 +25,7 @@ function Customers() {
                     </thead>
                     <tbody>
                         {items.map((c) => (
-                            <tr key={c._id} className="border-t border-gray-300">
+                            <tr key={c._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{c.name}</td>
                                 <td className="px-4 py-3">{c.phone}</td>
                                 <td className="px-4 py-3">{c.email || "-"}</td>

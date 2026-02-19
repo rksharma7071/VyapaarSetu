@@ -138,7 +138,7 @@ function Category() {
                             onClick={() =>
                                 setEditing({ id: "", name: "", slug: "" })
                             }
-                            className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
                         >
                             Cancel
                         </button>
@@ -156,7 +156,7 @@ function Category() {
                     </thead>
                     <tbody>
                         {items.map((c) => (
-                            <tr key={c._id} className="border-t border-gray-300">
+                            <tr key={c._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{c.name}</td>
                                 <td className="px-4 py-3">{c.slug}</td>
                                 <td className="px-4 py-3">
@@ -168,7 +168,7 @@ function Category() {
                                                 slug: c.slug,
                                             })
                                         }
-                                        className="mr-2 rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                        className="mr-2 rounded-lg border border-gray-200 px-3 py-1 text-xs"
                                     >
                                         Edit
                                     </button>

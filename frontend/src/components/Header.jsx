@@ -112,7 +112,7 @@ function Header() {
     return (
         <>
             {/* HEADER */}
-            <header className="relative z-50 flex h-20 items-center justify-between border-b border-gray-300 bg-white p-4">
+            <header className="relative z-50 flex h-20 items-center justify-between border-b border-gray-200 bg-white p-4">
                 <button className="text-2xl md:hidden" onClick={() => setOpen(true)} ><GiHamburgerMenu /></button>
 
                 {/* Desktop Search */}
@@ -135,7 +135,7 @@ function Header() {
                                 dispatch(clearPosOrder());
                             })()
                         }
-                        className="hidden sm:block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                        className="hidden sm:block rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     >
                         {stores.map((store) => (
                             <option key={store._id} value={store._id}>
@@ -209,7 +209,7 @@ function Header() {
         ${open ? "translate-x-0" : "-translate-x-full"}`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-300 p-4">
+                <div className="flex items-center justify-between border-b border-gray-200 p-4">
                     <h3 className="text-lg font-semibold">Menu</h3>
                     <button onClick={() => setOpen(false)}>
                         <TbX className="text-xl" />
@@ -221,7 +221,7 @@ function Header() {
                 <div className="grid h-[calc(100vh-4rem)] grid-cols-1">
 
                     {/* LEFT: MENU */}
-                    <nav className="col-span-2 overflow-y-auto border-r border-gray-300 p-4 space-y-1">
+                    <nav className="col-span-2 overflow-y-auto border-r border-gray-200 p-4 space-y-1">
                         {menuItems.filter(canSee).map((item) => (
                             <NavLink
                                 key={item.label}

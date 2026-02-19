@@ -153,7 +153,7 @@ function Order() {
                             <select
                                 value={statusFilter}
                                 onChange={(e) => dispatch(setStatusFilter(e.target.value))}
-                                className="w-36 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                className="w-36 appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
                                 <option value="">All Status</option>
                                 <option value="completed">Completed</option>
@@ -166,7 +166,7 @@ function Order() {
                             <select
                                 value={paymentFilter}
                                 onChange={(e) => dispatch(setPaymentFilter(e.target.value))}
-                                className="w-36 appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                className="w-36 appearance-none rounded-lg border border-gray-200 bg-white py-2 pl-3 pr-8 text-sm text-gray-700 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
                                 <option value="">All Payments</option>
                                 <option value="cash">Cash</option>
@@ -191,7 +191,7 @@ function Order() {
                                                 onChange={handleSelectAll}
                                                 className="peer hidden"
                                             />
-                                            <div className="h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
+                                            <div className="h-4 w-4 rounded border border-gray-200 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
                                                 <FaCheck className="h-3 w-3 text-white peer-checked:block" />
                                             </div>
                                         </label>
@@ -206,7 +206,7 @@ function Order() {
                                 </tr>
                             </thead>
 
-                            <tbody className="divide-y divide-gray-300">
+                            <tbody className="divide-y divide-gray-200">
                                 {currentOrders.map((order) => (
                                     <tr key={order._id} className="transition hover:bg-gray-50">
                                         <td className="px-4 py-1 text-center">
@@ -217,7 +217,7 @@ function Order() {
                                                     onChange={() => handleSelectOrder(order._id)}
                                                     className="peer hidden"
                                                 />
-                                                <div className="h-4 w-4 rounded border border-gray-300 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
+                                                <div className="h-4 w-4 rounded border border-gray-200 bg-white flex items-center justify-center transition peer-checked:border-primary peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/20">
                                                     <FaCheck className="h-3 w-3 text-white peer-checked:block" />
                                                 </div>
                                             </label>
@@ -256,13 +256,13 @@ function Order() {
                             </tbody>
                         </table>
                     </div>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 bg-white border-t border-gray-300">
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-5 bg-white border-t border-gray-200">
                         <div className="flex items-center gap-3 text-sm text-gray-700">
                             <span className="font-medium">Rows per page:</span>
                             <select
                                 value={rowsPerPage}
                                 onChange={handleRowsPerPageChange}
-                                className="px-3 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent hover:border-gray-400 transition-colors cursor-pointer"
+                                className="px-3 py-1.5 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent hover:border-gray-400 transition-colors cursor-pointer"
                             >
                                 <option value="10">10</option>
                                 <option value="20">20</option>
@@ -282,7 +282,7 @@ function Order() {
                                     handlePageChange(currentPage - 1)
                                 }
                                 disabled={currentPage === 1}
-                                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Previous
                             </button>
@@ -304,7 +304,7 @@ function Order() {
                                             }
                                             className={`w-9 h-9 rounded-lg font-medium transition-colors ${currentPage === page
                                                 ? "bg-primary text-white hover:bg-primary"
-                                                : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                                : "border border-gray-200 text-gray-700 hover:bg-gray-50"
                                                 }`}
                                         >
                                             {page}
@@ -321,7 +321,7 @@ function Order() {
                                     currentPage === totalPages ||
                                     totalPages === 0
                                 }
-                                className="px-3 py-1.5 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Next
                             </button>

@@ -139,7 +139,7 @@ function SideBar() {
       {/* LOGO */}
       <Link
         to="/"
-        className="flex h-20 items-center justify-center border-b border-gray-300"
+        className="flex h-20 items-center justify-center border-b border-gray-200"
       >
         <img
           src={menu ? "/logo.png" : "/favicon.png"}

@@ -50,7 +50,7 @@ function Orders() {
 
     return (
         <div className="flex h-full flex-col gap-4">
-            <div className="rounded-xl border border-gray-300 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <div className="text-lg font-semibold">POS Orders</div>
@@ -67,7 +67,7 @@ function Orders() {
                         />
                         <button
                             onClick={load}
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                         >
                             {loading ? "Loading..." : "Refresh"}
                         </button>
@@ -76,7 +76,7 @@ function Orders() {
             </div>
 
             <div className="flex flex-1 flex-col gap-4 overflow-hidden lg:flex-row">
-                <div className="w-full lg:w-2/5 rounded-xl border border-gray-300 bg-white p-3 overflow-y-auto">
+                <div className="w-full lg:w-2/5 rounded-xl border border-gray-200 bg-white p-3 overflow-y-auto">
                     {filtered.length === 0 && (
                         <div className="p-4 text-sm text-gray-500">No orders found.</div>
                     )}
@@ -123,7 +123,7 @@ function Orders() {
                     </div>
                 </div>
 
-                <div className="w-full lg:w-3/5 rounded-xl border border-gray-300 bg-white p-4 overflow-y-auto">
+                <div className="w-full lg:w-3/5 rounded-xl border border-gray-200 bg-white p-4 overflow-y-auto">
                     {!selectedOrder && (
                         <div className="text-sm text-gray-500">
                             Select an order to view details.
@@ -175,7 +175,7 @@ function Orders() {
                                 <div className="border-b border-gray-200 px-3 py-2 text-sm font-semibold">
                                     Items
                                 </div>
-                                <div className="divide-y">
+                                <div className="divide-y divide-gray-200">
                                     {selectedOrder.items?.map((item, idx) => (
                                         <div key={`${item.productId?._id || item.productId}-${idx}`} className="flex items-center justify-between px-3 py-2 text-sm">
                                             <div className="flex items-center gap-3">
@@ -183,11 +183,11 @@ function Orders() {
                                                     <img
                                                         src={item.productId.image}
                                                         alt={item.name}
-                                                        className="h-10 w-10 rounded-lg border border-gray-300 object-cover"
+                                                        className="h-10 w-10 rounded-lg border border-gray-200 object-cover"
                                                         loading="lazy"
                                                     />
                                                 ) : (
-                                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-gray-100 text-xs font-semibold text-gray-500">
+                                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-500">
                                                         {item.name?.[0] || "P"}
                                                     </div>
                                                 )}

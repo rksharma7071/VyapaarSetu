@@ -52,6 +52,11 @@ function Dashboard() {
         load();
     }, [storeId]);
 
+    const formatPrice = (value) => {
+        const numeric = Number(value);
+        return Number.isFinite(numeric) ? numeric.toFixed(2) : "0.00";
+    };
+
     const { labels, series } = useMemo(() => {
         const days = 30;
         const labelsArr = [];
@@ -194,13 +199,13 @@ function Dashboard() {
 
                     <div className="rounded-xl border border-gray-200 bg-white p-6">
                         <GiTakeMyMoney className="text-3xl mb-2 text-emerald-600" />
-                        <h2 className="text-2xl font-bold">₹{summary.totalTax}</h2>
+                        <h2 className="text-2xl font-bold">₹{formatPrice(summary.totalTax)}</h2>
                         <p className="text-sm text-gray-500 mt-1">Tax Collected</p>
                     </div>
 
                     <div className="rounded-xl border border-gray-200 bg-white p-6">
                         <p className="text-sm text-gray-500">Discount Given</p>
-                        <h2 className="text-2xl font-bold">₹{summary.totalDiscount}</h2>
+                        <h2 className="text-2xl font-bold">₹{formatPrice(summary.totalDiscount)}</h2>
                         <p className="text-sm text-gray-500 mt-1">Total Discount</p>
                     </div>
                 </div>

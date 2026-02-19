@@ -1,8 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { FiDownload } from "react-icons/fi";
-import { FiPlusCircle } from "react-icons/fi";
-import { IoSearch } from 'react-icons/io5';
-import { FaChevronDown } from "react-icons/fa";
 import { Link, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from "react-icons/fa6";
 import { GoChevronDown } from 'react-icons/go';
@@ -193,7 +189,7 @@ function CreateProducts() {
                             name="taxRate"
                             value={product.taxRate}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                         /> */}
                         <Input type="number" step="0.01" name="taxRate" value={product.taxRate} onChange={handleChange} />
                     </div>
@@ -220,7 +216,7 @@ function CreateProducts() {
                             name="image"
                             accept="image/jpeg,image/png,image/webp"
                             onChange={handleFileChange}
-                            className="block w-full cursor-pointer rounded-lg border border-gray-300 bg-white text-sm file:mr-4 file:rounded-l-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:bg-primary/90"
+                            className="block w-full cursor-pointer rounded-lg border border-gray-200 bg-white text-sm file:mr-4 file:rounded-l-lg file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:bg-primary/90"
                         />
                     </div>
                     <div>
@@ -228,7 +224,7 @@ function CreateProducts() {
                         <div className="relative">
                             <select
                                 name="status"
-                                className="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2.5 pl-4 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                                className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-4 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                             >
                                 <option value="">Select status</option>
                                 <option value="true">Publish</option>

@@ -188,7 +188,7 @@ function ManageStock() {
                         onChange={(e) =>
                             setBatch((b) => ({ ...b, productId: e.target.value }))
                         }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                     >
                         <option value="">Select product</option>
                         {products.map((p) => (
@@ -242,7 +242,7 @@ function ManageStock() {
                                 productId: e.target.value,
                             }))
                         }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                     >
                         <option value="">Select product</option>
                         {products.map((p) => (
@@ -270,7 +270,7 @@ function ManageStock() {
                                 reason: e.target.value,
                             }))
                         }
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                     >
                         <option value="audit">Audit</option>
                         <option value="damage">Damage</option>
@@ -310,7 +310,7 @@ function ManageStock() {
                                     reason: e.target.value,
                                 }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                         >
                             <option value="audit">Audit</option>
                             <option value="damage">Damage</option>
@@ -355,7 +355,7 @@ function ManageStock() {
                     </thead>
                     <tbody>
                         {inventory.map((i) => (
-                            <tr key={i._id} className="border-t border-gray-300">
+                            <tr key={i._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">
                                     <input
                                         type="checkbox"
@@ -373,11 +373,11 @@ function ManageStock() {
                                             <img
                                                 src={i.productId.image}
                                                 alt={i.productId?.name || "Product"}
-                                                className="h-10 w-10 rounded-lg border border-gray-300 object-cover"
+                                                className="h-10 w-10 rounded-lg border border-gray-200 object-cover"
                                                 loading="lazy"
                                             />
                                         ) : (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-gray-100 text-xs font-semibold text-gray-500">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-500">
                                                 {i.productId?.name?.[0] || "P"}
                                             </div>
                                         )}

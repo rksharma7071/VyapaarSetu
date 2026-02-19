@@ -28,7 +28,7 @@ function Cart() {
                 {cart.map(item => (
                     <div
                         key={item._id}
-                        className="flex items-center justify-between gap-3 rounded-xl border border-gray-300 p-3"
+                        className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 p-3"
                     >
                         <div className="flex items-center gap-3">
                             <img
@@ -42,7 +42,7 @@ function Cart() {
                             </div>
                         </div>
 
-                        <div className="flex items-center rounded-lg border border-gray-300 overflow-hidden">
+                        <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
                             <button
                                 onClick={() => dispatch(decreaseQty(item._id))}
                                 className="h-8 w-8 text-lg hover:bg-gray-100"
@@ -63,7 +63,7 @@ function Cart() {
                 ))}
             </div>
 
-            <div className="border-t border-gray-300 pt-4">
+            <div className="border-t border-gray-200 pt-4">
                 <div className="flex justify-between text-sm">
                     <span>Subtotal</span>
                     <span>₹{subtotal}</span>

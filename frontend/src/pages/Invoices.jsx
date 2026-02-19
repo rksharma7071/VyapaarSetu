@@ -35,7 +35,7 @@ function Invoices() {
                     </thead>
                     <tbody>
                         {items.map((inv) => (
-                            <tr key={inv._id} className="border-t border-gray-300">
+                            <tr key={inv._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{inv.invoiceNumber}</td>
                                 <td className="px-4 py-3">
                                     {inv.orderId?.orderNumber || inv.orderId}
@@ -55,7 +55,7 @@ function Invoices() {
                                                     inv.orderId,
                                             })
                                         }
-                                        className="rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                        className="rounded-lg border border-gray-200 px-3 py-1 text-xs"
                                     >
                                         Download
                                     </button>

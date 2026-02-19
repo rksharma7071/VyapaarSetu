@@ -136,7 +136,7 @@ function Discount() {
                         name="discount_type"
                         value={form.discount_type}
                         onChange={handleChange}
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                     >
                         <option value="percentage">Percentage</option>
                         <option value="fixed_amount">Fixed Amount</option>
@@ -187,7 +187,7 @@ function Discount() {
                             <button
                                 type="button"
                                 onClick={resetForm}
-                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                                className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
                             >
                                 Cancel
                             </button>
@@ -210,7 +210,7 @@ function Discount() {
                     </thead>
                     <tbody>
                         {items.map((d) => (
-                            <tr key={d._id} className="border-t border-gray-300">
+                            <tr key={d._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{d.discount_code}</td>
                                 <td className="px-4 py-3">{d.discount_type}</td>
                                 <td className="px-4 py-3">
@@ -227,7 +227,7 @@ function Discount() {
                                 <td className="px-4 py-3">
                                     <button
                                         onClick={() => handleEdit(d)}
-                                        className="mr-2 rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                        className="mr-2 rounded-lg border border-gray-200 px-3 py-1 text-xs"
                                     >
                                         Edit
                                     </button>

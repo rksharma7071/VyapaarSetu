@@ -29,18 +29,18 @@ function ExpiredProducts() {
                     </thead>
                     <tbody>
                         {items.map((b) => (
-                            <tr key={b._id} className="border-t border-gray-300">
+                            <tr key={b._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">
                                     <div className="flex items-center gap-3">
                                         {b.productId?.image ? (
                                             <img
                                                 src={b.productId.image}
                                                 alt={b.productId?.name || "Product"}
-                                                className="h-10 w-10 rounded-lg border border-gray-300 object-cover"
+                                                className="h-10 w-10 rounded-lg border border-gray-200 object-cover"
                                                 loading="lazy"
                                             />
                                         ) : (
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-gray-100 text-xs font-semibold text-gray-500">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-gray-100 text-xs font-semibold text-gray-500">
                                                 {b.productId?.name?.[0] || "P"}
                                             </div>
                                         )}

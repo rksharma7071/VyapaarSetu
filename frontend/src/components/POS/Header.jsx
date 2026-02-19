@@ -99,7 +99,7 @@ function Header() {
 
                     <button
                         onClick={handleResetOrder}
-                        className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                         <RiResetRightFill className="text-lg" />
                         Reset
@@ -107,13 +107,13 @@ function Header() {
 
                     <button
                         onClick={toggleFullscreen}
-                        className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
                         <GoScreenFull className="text-lg" />
                         {isFullscreen ? "Exit Full Screen" : "Full Screen"}
                     </button>
 
-                    <div className="mx-2 h-6 w-px bg-gray-300" />
+                    <div className="mx-2 h-6 w-px bg-gray-200" />
 
                     <Link
                         to="/"
@@ -185,7 +185,7 @@ function Header() {
 
                         <button
                             onClick={handleResetOrder}
-                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2 text-sm"
+                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-sm"
                         >
                             <RiResetRightFill />
                             Reset
@@ -193,7 +193,7 @@ function Header() {
 
                         <button
                             onClick={toggleFullscreen}
-                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-300 py-2 text-sm"
+                            className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 py-2 text-sm"
                         >
                             <GoScreenFull />
                             {isFullscreen ? "Exit Full Screen" : "Full Screen"}
@@ -225,13 +225,13 @@ function Header() {
                         <div className="flex items-center gap-2">
                             <Link
                                 to="/"
-                                className="rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                className="rounded-lg border border-gray-200 px-3 py-1 text-xs"
                             >
                                 Dashboard
                             </Link>
                             <button
                                 onClick={handleLogout}
-                                className="rounded-lg border border-gray-300 px-3 py-1 text-xs"
+                                className="rounded-lg border border-gray-200 px-3 py-1 text-xs"
                             >
                                 Logout
                             </button>

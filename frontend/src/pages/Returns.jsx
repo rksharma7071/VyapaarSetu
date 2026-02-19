@@ -49,7 +49,7 @@ function Returns() {
                             onChange={(e) =>
                                 setForm((f) => ({ ...f, orderId: e.target.value }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                         >
                             <option value="">Select order</option>
                             {orders.map((o) => (
@@ -66,7 +66,7 @@ function Returns() {
                             onChange={(e) =>
                                 setForm((f) => ({ ...f, productId: e.target.value }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                         >
                             <option value="">Select product</option>
                             {products.map((p) => (
@@ -111,7 +111,7 @@ function Returns() {
                                     refundMethod: e.target.value,
                                 }))
                             }
-                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
                         >
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
@@ -192,7 +192,7 @@ function Returns() {
                     </thead>
                     <tbody>
                         {items.map((r) => (
-                            <tr key={r._id} className="border-t border-gray-300">
+                            <tr key={r._id} className="border-t border-gray-200">
                                 <td className="px-4 py-3">{r.orderId}</td>
                                 <td className="px-4 py-3">₹{r.refundAmount}</td>
                                 <td className="px-4 py-3">{r.refundMethod}</td>

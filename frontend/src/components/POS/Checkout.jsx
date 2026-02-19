@@ -275,7 +275,7 @@ function Checkout() {
     return (
         <div className="flex h-full flex-col gap-4">
             {/* Customer */}
-            <div className="rounded-xl border border-gray-300 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <h2 className="mb-3 font-semibold">Customer</h2>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -285,7 +285,7 @@ function Checkout() {
             </div>
 
             {/* Order Summary */}
-            <div className="rounded-xl border border-gray-300 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <h2 className="mb-3 font-semibold">Order Summary</h2>
 
                 <div className="space-y-2 text-sm">
@@ -317,7 +317,7 @@ function Checkout() {
                                     type="button"
                                     onClick={handleApplyDiscount}
                                     disabled={applyingDiscount}
-                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
                                 >
                                     {applyingDiscount ? "Applying..." : "Apply"}
                                 </button>
@@ -325,7 +325,7 @@ function Checkout() {
                                 <button
                                     type="button"
                                     onClick={handleClearDiscount}
-                                    className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+                                    className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
                                 >
                                     Remove
                                 </button>
@@ -341,11 +341,11 @@ function Checkout() {
             </div>
 
             {/* Payment */}
-            <div className="rounded-xl border border-gray-300 bg-white p-4">
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
                 <h2 className="mb-3 font-semibold">Payment</h2>
 
                 <select
-                    className="w-full appearance-none rounded-lg border border-gray-300 bg-white py-2.5 pl-4 mb-3 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                    className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-4 mb-3 pr-10 text-sm placeholder-gray-400 transition focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none"
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                 >
@@ -361,7 +361,7 @@ function Checkout() {
             <div className="mt-auto flex gap-3">
                 <button
                     onClick={() => navigate("/pos")}
-                    className="flex-1 rounded-lg border border-gray-300 py-3"
+                    className="flex-1 rounded-lg border border-gray-200 py-3"
                 >
                     Cancel
                 </button>
