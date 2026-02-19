@@ -13,7 +13,7 @@ function Login() {
         const stored = localStorage.getItem("login");
         return stored
             ? JSON.parse(stored)
-            : { email: "test@gmail.com", password: "test@123" };
+            : { email: "", password: "" };
     });
     const [remember, setRemember] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
