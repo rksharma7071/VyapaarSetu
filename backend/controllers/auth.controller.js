@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { User } from "../models/user.model.js";
 import Store from "../models/store.model.js";
 import RefreshToken from "../models/refreshToken.model.js";
+import { connectDB } from "../config/database.js";
 
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -48,6 +49,8 @@ async function handleAuthSignUp(req, res) {
     const { email, password, name, role, storeId } = req.body;
 
     try {
+        await connectDB();
+
         // Check if user already exists
         const existingUser = await User.findOne({
             $or: [{ email }],
@@ -112,6 +115,8 @@ async function handleAuthLogin(req, res) {
     }
 
     try {
+        await connectDB();
+
         // 1. Find user by email
         const user = await User.findOne({ email });
         if (!user) {
@@ -182,6 +187,8 @@ async function handleAuthChangePassword(req, res) {
     }
 
     try {
+        await connectDB();
+
         // Find user by email
         const user = await User.findOne({ email });
         if (!user) {
@@ -213,11 +220,12 @@ async function handleAuthChangePassword(req, res) {
 
 async function handleAuthRequestOTP(req, res) {
     const { email } = req.body;
-    console.log("email: ", email);
+    await connectDB();
+    // console.log("email: ", email);
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    console.log("user: ", user);
+    // console.log("user: ", user);
 
     const otp = generateOTP();
     user.otp = otp;
@@ -258,6 +266,7 @@ async function handleAuthRequestOTP(req, res) {
 
 async function handleAuthVerifyOTP(req, res) {
     const { email, otp } = req.body;
+    await connectDB();
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -272,6 +281,7 @@ async function handleAuthVerifyOTP(req, res) {
 
 async function handleAuthResetPassword(req, res) {
     const { email, password } = req.body;
+    await connectDB();
     const user = await User.findOne({ email });
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -292,6 +302,8 @@ async function handleAuthResetPassword(req, res) {
 
 async function handleAuthRefresh(req, res) {
     try {
+        await connectDB();
+
         const { refreshToken } = req.body;
         if (!refreshToken) {
             return res.status(400).json({ message: "Refresh token required" });
@@ -320,6 +332,8 @@ async function handleAuthRefresh(req, res) {
 
 async function handleAuthLogout(req, res) {
     try {
+        await connectDB();
+
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ message: "Unauthorized" });
         await RefreshToken.updateMany(

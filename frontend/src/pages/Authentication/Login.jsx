@@ -47,7 +47,7 @@ function Login() {
         try {
             const { data } = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, login);
 
-            console.log("Login Data: ", data);
+            // console.log("Login Data: ", data);
             localStorage.setItem("token", data.token);
             if (data.refreshToken) {
                 localStorage.setItem("refresh_token", data.refreshToken);
@@ -61,7 +61,7 @@ function Login() {
             else {
                 localStorage.removeItem("login");
             }
-            console.log("Login Success: ", data);
+            // console.log("Login Success: ", data);
 
             if (data.user?.subscriptionActive) {
                 navigate("/");

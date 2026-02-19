@@ -8,7 +8,7 @@ const api = import.meta.env.VITE_API_URL || "http://localhost:3000";
 const getProducts = async () => {
     try {
         const response = await axios.get(`${api}/product`);
-        console.log(response?.data?.data);
+        // console.log(response?.data?.data);
         return response?.data?.data.products;
     } catch (error) {
         console.log(error);

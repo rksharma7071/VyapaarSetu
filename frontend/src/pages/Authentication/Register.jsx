@@ -84,7 +84,7 @@ function Register() {
                 localStorage.removeItem("register");
             }
 
-            console.log("Signup Success: ", data);
+            // console.log("Signup Success: ", data);
 
             notify({
                 type: "success",
@@ -157,7 +157,7 @@ function Register() {
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="password">Password<span className='text-red-500 pl-1'>*</span></label>
                         <Input
-                            type={`${showPassword === false ? "password" : "text"} `}
+                            type={`${showPassword === false ? "password" : "text"}`}
                             value={register.password}
                             name="password"
                             onChange={handleChange}
@@ -172,7 +172,7 @@ function Register() {
                     <div className='relative mb-3'>
                         <label className='block mb-2' htmlFor="confirmpassword">Confirm Password<span className='text-red-500 pl-1'>*</span></label>
                         <Input
-                            type={`${showConfirmPassword === false ? "password" : "text"} `}
+                            type={`${showConfirmPassword === false ? "password" : "text"}`}
                             value={register.confirmpassword}
                             name="confirmpassword"
                             onChange={handleChange}

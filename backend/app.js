@@ -31,6 +31,15 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (error) {
+        console.error("MongoDB Error:", error);
+        res.status(500).json({ message: "Database connection failed" });
+    }
+});
 
 app.use("/product", productRouter);
 app.use("/user", userRouter);
@@ -81,8 +90,17 @@ app.get("/", (req, res) => {
     });
 });
 
-connectDB();
+if (process.env.VERCEL !== "1") {
+    connectDB()
+        .then(() => {
+            app.listen(PORT, () => {
+                console.log(`Server is running https://localhost:${PORT}`);
+            });
+        })
+        .catch((error) => {
+            console.error("Failed to start server:", error);
+            process.exit(1);
+        });
+}
 
-app.listen(PORT, () => {
-    console.log(`Server is running https://localhost:${PORT}`);
-});
+export default app;
